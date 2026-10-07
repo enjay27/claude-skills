@@ -77,17 +77,29 @@ the check automatic in Claude Code sessions (terminal and cloud):
 - Hooks receive no context usage, but they receive `transcript_path`, and every assistant entry
   there carries the request's `usage`. Input + cache creation + cache read is the same number the
   status line shows as context used.
-- **UserPromptSubmit:** at **60%** Claude answers, then adds one line with the number; at **80%**
-  it stops before the prompt's work, recommends a handoff, and offers three choices: handoff and
+- **UserPromptSubmit:** at **200k tokens** Claude answers, then adds one line with the number; at
+  **400k** it stops before the prompt's work, recommends a handoff, and offers three choices: handoff and
   a new session (`session-handoff`), `/compact` with a focus, or continue. Kade also sees a
   one-line warning. Each level fires once, and re-arms when usage drops after a compaction.
 - **SessionStart, matcher `compact`:** right after a compaction, Claude says so and offers the
   same choices.
-- Thresholds and window size are environment variables (`CONTEXT_WARN_PCT`,
-  `CONTEXT_HANDOFF_PCT`, `CLAUDE_CONTEXT_WINDOW`; a session past 200k tokens is taken as a 1M window).
+- The lines are token counts capped at a share of the window: warn at 200k but never later than
+  40%, hand off at 400k but never later than 60% (a 200k-window model: 80k and 120k). The window
+  defaults to 1M. All are environment variables (`CONTEXT_WARN_TOKENS`, `CONTEXT_HANDOFF_TOKENS`,
+  `CONTEXT_WARN_PCT`, `CONTEXT_HANDOFF_PCT`, `CLAUDE_CONTEXT_WINDOW`).
+- Why these numbers (Kade, 2026-10-08, changed from 60% / 80% of an assumed window): quality
+  degrades gradually as context grows, and no vendor publishes a switch point. Anthropic calls it
+  context rot ([context windows](https://platform.claude.com/docs/en/build-with-claude/context-windows));
+  Claude Code's [best practices](https://code.claude.com/docs/en/best-practices) say to `/clear`
+  between unrelated tasks and to start fresh after two failed corrections; Chroma's
+  [Context Rot](https://www.trychroma.com/research/context-rot) and
+  [NoLiMa](https://arxiv.org/abs/2502.05167) measure the drop. Claude Code auto-compacts a 1M
+  session at about 967k ([model config](https://code.claude.com/docs/en/model-config)), so a
+  400k handoff comes long before it. Task boundaries come first (`kade-workflow` section 7); the
+  hook is the backstop.
 - It never blocks a prompt; on any error it is silent.
 
-Files: `hooks/context-guard.cjs`, 12 tests in `hooks/context-guard.test.cjs`, and
+Files: `hooks/context-guard.cjs`, 14 tests in `hooks/context-guard.test.cjs`, and
 `hooks/settings-snippet.json` to merge into a repository's `.claude/settings.json`.
 Each repository vendors a copy at `.claude/hooks/context-guard.cjs`.
 
@@ -143,7 +155,7 @@ loads when the files it concerns are touched, or when the release skill is invok
 | R1 | Create `.claude/rules/{app,ui,runbook,release}.md` and `.claude/skills/release/` by moving text verbatim; remove the moved text from `CLAUDE.md` | none |
 | R2 | Trim `CLAUDE.md` (history out, layout to top level), add `@MEMORY.md` and the skills line | wording only |
 | R3 | `memory-check.sh` line limit + test; `claude-md-check.sh` + test; wire into `ci.yml` | CI gets stricter |
-| R4 | Shrink *Now* to one line per item; stop handoff files; vendor `context-guard` and merge its settings with the graft hooks | Claude warns at 60% / 80% context |
+| R4 | Shrink *Now* to one line per item; stop handoff files; vendor `context-guard` and merge its settings with the graft hooks | Claude warns at 200k / 400k tokens of context |
 | R5 (after 2 weeks) | Remove `workflow-control` | none |
 
 Optional later (bridge plan phase B5): move resonance-stream's issues and roadmap to a user-level
@@ -191,7 +203,7 @@ No `MEMORY.md` and no `.memory/` in any Stella Rain repository (ADR-031).
 |---|---|---|
 | 0 | Three account skills saved; `enjay27/claude-skills` created and pushed | done 2026-10-08 |
 | 1 | Stella Rain pilot: bridge setup (runbook), then `CLAUDE.md`, rules, skills and `context-guard` for each repository | done 2026-10-08 (see below) |
-| 2 | resonance-stream R1–R4, in a resonance-stream session | the Stella Rain pilot |
+| 2 | resonance-stream R1–R4, in a resonance-stream session | done 2026-10-08 (see below) |
 | 3 | Two weeks of use; adjust the account skills | step 2 |
 | 4 | resonance-stream R5; lakehouse-k8s L1–L4 | step 3 |
 
@@ -206,6 +218,24 @@ Step 1 as built in Stella Rain, to copy into resonance-stream R1–R4:
 - The remote file tools cannot write `.github/`, `.claude/` or anything in a repository named
   `.github`; those files went over as zips that Kade extracted, and Kade committed `.github`.
 - Not yet observed: `context-guard` and the path-scoped rules loading in a real Claude Code session.
+
+Step 2 as built in resonance-stream (one PR each, all auto-merged on green CI, 2026-10-08):
+
+| PR | Content | Result |
+|---|---|---|
+| #256 R1 | Sections moved verbatim to `.claude/rules/{app,ui,runbook,release}.md` and a `release` skill (model invocation left on: Claude runs the rc and `test/*` flows itself) | `CLAUDE.md` 321 → 217 lines |
+| #257 R2 | Trim; `@MEMORY.md`; "Follow `kade-workflow`"; per-file layout moved to `rules/{core,ui,app}.md` instead of dropped (Kade) | 217 → 99 lines |
+| #258 R3a | *Now* shrunk first, in its own PR, so the line-length check lands on a file that meets it (Kade split R3) | `MEMORY.md` 5,576 → 3,004 bytes |
+| #259 R3b | `memory-check.sh` 200 characters a line (counted with `perl -CSD`: mawk counts bytes); `claude-md-check.sh` (bash, like the repo's other helpers, not the pilot's Python) | CI enforces both |
+| #260 R4 | `context-guard` vendored beside the graft hooks (settings merged by code); its test also runs in CI; handoff files stop | |
+
+- The work ran in a cloud session with the repository attached, so `.claude/` and `.github/` were
+  pushed directly; the zip route is needed only for the desktop file tools.
+- The `@MEMORY.md` import and the new `release` skill were picked up by the session at once.
+- `claude-skills` needed the Claude GitHub app's repository access before a cloud session could read it.
+- Not yet observed: the same two items as the pilot.
+- Next: move resonance-stream and resonance-lab to a user-level Project (bridge plan B5); plan
+  first. The re-vendored hook (200k / 400k) goes to resonance-stream and the Stella Rain repositories.
 
 ## 8. Risks
 
@@ -222,4 +252,5 @@ Step 1 as built in Stella Rain, to copy into resonance-stream R1–R4:
 1. **Yes:** a private `enjay27/claude-skills` repository holds the account skills, the hooks and this plan.
 2. **Yes:** `CLAUDE.md` is limited to 100 lines, checked by CI.
 3. **After the Stella Rain pilot:** resonance-stream R1–R4 run then, in a resonance-stream session.
-4. Context guard added: warn at 60%, recommend a handoff at 80% (section 3a).
+4. Context guard added: warn at 60%, recommend a handoff at 80% (section 3a). Changed the same day:
+   warn at 200k tokens, hand off at 400k, never later than 40% / 60% of the window.
