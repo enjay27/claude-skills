@@ -37,7 +37,7 @@ What already works and stays: the rules/state/detail split, findings-style commi
    | Kade's way of working, all repositories | **Account skills** on claude.ai (available in cloud, Cowork and terminal sessions) |
 | Automatic warnings and checks inside a session | **Hooks**, vendored from this repository into each repository's `.claude/hooks/` |
    | Why it is like this | ADRs (Stella Rain) or `docs/decisions.md` (resonance-stream) |
-   | Tasks, bugs, unverified items, roadmap | Org Project (Stella Rain); `MEMORY.md` + `.memory/` until a repository migrates |
+   | Tasks, bugs, unverified items, roadmap | Org Project (Stella Rain); labelled issues read over REST (resonance-stream, resonance-lab); `MEMORY.md` + `.memory/` until a repository migrates |
    | What one change did, what was verified, wrong turns | PR description (template) |
 
 2. **No dates in rules.** "Until 2026-10-07 it was two types" is history; the rule is "one type,
@@ -158,8 +158,12 @@ loads when the files it concerns are touched, or when the release skill is invok
 | R4 | Shrink *Now* to one line per item; stop handoff files; vendor `context-guard` and merge its settings with the graft hooks | Claude warns at 200k / 400k tokens of context |
 | R5 (after 2 weeks) | Remove `workflow-control` | none |
 
-Optional later (bridge plan phase B5): move resonance-stream's issues and roadmap to a user-level
-Project with the same bridge.
+Bridge plan phase B5, **decided 2026-10-08: no Project for resonance.** A user-owned Project needs a
+classic token (GitHub Apps and fine-grained tokens cannot reach one) plus a snapshot workflow. Instead
+the state is issues with persistent labels (`status:now|next`, `verify:needs-kade|not-verified`), read
+over repository-scoped REST, which cloud sessions can reach. *Now* keeps only what has no issue; after
+a trial (until about 2026-10-22) it goes in its own PR. resonance-lab has the labels; moving its
+*Now* into issues is a separate task.
 
 ## 5. lakehouse-k8s
 
@@ -234,8 +238,10 @@ Step 2 as built in resonance-stream (one PR each, all auto-merged on green CI, 2
 - The `@MEMORY.md` import and the new `release` skill were picked up by the session at once.
 - `claude-skills` needed the Claude GitHub app's repository access before a cloud session could read it.
 - Not yet observed: the same two items as the pilot.
-- Next: move resonance-stream and resonance-lab to a user-level Project (bridge plan B5); plan
-  first. The re-vendored hook (200k / 400k) goes to resonance-stream and the Stella Rain repositories.
+- Then, same day: the 200k / 400k hook in resonance-stream (#261; identical to this repository's copy;
+  Stella Rain `app` #7 and `core` #4 wait for Kade). State moved to labelled issues (#277: issues
+  #264-#276 replace *Now*'s items). Wrong turn: #263 and resonance-lab #79 added bridge callers for a
+  user Project, removed unused by #277 and resonance-lab #80 once labels were chosen.
 
 ## 8. Risks
 
