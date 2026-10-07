@@ -59,6 +59,9 @@ and see it fail for the right reason, then write the code. If a change cannot be
 
 - **Org Project repositories** (Stella Rain): issues plus `cmd:` labels
   (`cmd:status-now`, `cmd:verify-needs-kade`, `cmd:verify-not-verified`), never a state file.
+- **Label repositories** (resonance-stream, resonance-lab): issues with `status:now|next` and
+  `verify:needs-kade|not-verified` labels, read and written over REST. A label is state: it stays
+  until the state changes. No `status:` label = backlog; an open PR = in review.
 - **`MEMORY.md` repositories**: update its *Now* section, one line per item, decisions by ID
   only. Detail goes where that repository's `CLAUDE.md` says.
 - State changes go in the same branch or commit as the work they describe.
