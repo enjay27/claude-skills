@@ -189,11 +189,23 @@ No `MEMORY.md` and no `.memory/` in any Stella Rain repository (ADR-031).
 
 | Step | Work | Depends on |
 |---|---|---|
-| 0 | Three account skills saved; `enjay27/claude-skills` created and pushed | done 2026-10-08 except the push |
-| 1 | Stella Rain pilot: bridge setup (runbook), then `CLAUDE.md`, rules, skills and `context-guard` for each repository | step 0 |
+| 0 | Three account skills saved; `enjay27/claude-skills` created and pushed | done 2026-10-08 |
+| 1 | Stella Rain pilot: bridge setup (runbook), then `CLAUDE.md`, rules, skills and `context-guard` for each repository | done 2026-10-08 (see below) |
 | 2 | resonance-stream R1–R4, in a resonance-stream session | the Stella Rain pilot |
 | 3 | Two weeks of use; adjust the account skills | step 2 |
 | 4 | resonance-stream R5; lakehouse-k8s L1–L4 | step 3 |
+
+Step 1 as built in Stella Rain, to copy into resonance-stream R1–R4:
+
+- `CLAUDE.md`: app 89, core 86, moderation 58, `.github` 52, stage-template 33 lines (written
+  for creators, since every creator repository is a copy).
+- The CLAUDE.md check is `scripts/claude_md_check.py` (17 tests) plus a reusable workflow in
+  `stella-rain/.github`; four repositories call it. The same repository holds `eol-check.yml`:
+  every repository has `.gitattributes` with `* text=auto eol=lf`, and CI fails on CRLF
+  (added after Windows `core.autocrlf` warnings).
+- The remote file tools cannot write `.github/`, `.claude/` or anything in a repository named
+  `.github`; those files went over as zips that Kade extracted, and Kade committed `.github`.
+- Not yet observed: `context-guard` and the path-scoped rules loading in a real Claude Code session.
 
 ## 8. Risks
 
