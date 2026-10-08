@@ -8,12 +8,19 @@ and the plan that moves each repository onto them. Private.
 | `skills/kade-workflow/` | How to work in any of Kade's repositories: plan, test, gates, commit and PR style, state, context budget | Saved as a claude.ai account skill |
 | `skills/session-resume/` | Start a session from the recorded state | Account skill |
 | `skills/session-handoff/` | Close a session: park the task, record state, print a starter prompt | Account skill |
+| `skills/fresh-review/` | Review a behaviour change from a fresh-context subagent before the PR, with Rust and Kotlin checklists | Account skill; `kade-workflow` step 4a calls it |
 | `hooks/context-guard.cjs` | Warns at 200k tokens of context, recommends a handoff at 400k (never later than 40% / 60% of the window), and after a compaction | Copied into each repository's `.claude/hooks/`; merge `hooks/settings-snippet.json` into its `.claude/settings.json` |
 | `docs/refactor-plan.md` | Moving `CLAUDE.md`, `MEMORY.md`, skills and rules to this setup, per repository | Read by the session doing the work |
 
 Account skills apply in Claude Code (terminal and cloud) and Cowork sessions. Each repository's
 `CLAUDE.md` keeps one line, *"Follow the `kade-workflow` skill"*, and its own gates, paths and
 branch rules; the skills never hold repository-specific facts.
+
+## Third-party material
+
+`skills/fresh-review/` adapts parts of three agents from
+[ECC](https://github.com/affaan-m/ECC) (MIT). `skills/fresh-review/NOTICE` names the files, the
+commit and the licence. Nothing else from ECC is installed or vendored.
 
 ## Changing a skill
 
