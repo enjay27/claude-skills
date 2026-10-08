@@ -16,6 +16,14 @@ state lives. This skill says **how** to work in any of them. Where they differ, 
 - **A new module, crate or dependency is decided with Kade first**: bring the options, their
   trade-offs for long-term release maintainability (API and format stability, upgrade cost,
   tooling lock-in) and your recommendation, then build after he picks.
+- **Decide before you wire.** Wiring, a new repository or a new integration comes after a written
+  plan or ADR that Kade has accepted. If the plan says `proposed`, ask him to accept it first
+  (or accept with changes); add no dormant caller, disabled workflow or stub for an undecided design.
+- **A decision brief** is: 2 to 3 options in a table, the long-term maintenance cost of each,
+  your recommendation, open questions. No code, file or dependency until he picks.
+- **Outward actions** (a public repository, an issue or PR made for a test, a transfer, a secret,
+  a message to others): before doing one, say what it creates, who can see it and how it is
+  removed afterwards (and what permission that needs); then ask. A bare "ok?" is not enough.
 - **Wait for Kade's explicit approval.** Approval covers the steps in the plan, nothing more.
   A new step that widens the scope goes back to him.
 - "Follow your recommendation" from Kade means: do what you recommended.
@@ -35,6 +43,9 @@ and see it fail for the right reason, then write the code. If a change cannot be
 ## 4. Verify honestly
 
 - Run the gate for **every part touched**, as the repository's `CLAUDE.md` defines it.
+- **A failing gate is not yet your change's fault:** run it on the unchanged checkout first
+  (stash or the previous commit). A missing tool or target is installed if the host is allowed,
+  otherwise `NOT VERIFIED`. Before reporting a hang, check your own time limit.
 - **Never report a gate as passed when it could not run.** Name it in the last commit body:
   `NOT VERIFIED: <gate>: <reason>` (for example, no Windows toolchain, no cluster reach).
 - A blocked network host is **asked for**, never worked around: name the host and what needs it.

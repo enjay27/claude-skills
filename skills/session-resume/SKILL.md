@@ -32,12 +32,19 @@ trust it, then confirm against the sources above.
 - `git status` and the current branch. Uncommitted changes are Kade's unless the starter
   prompt says they are a parked task.
 
-## 3. Report (at most about 15 lines)
+## 3. Know the machine
+
+Find out which machine this session runs on (Windows, macOS, or the NAS over SSH). Checks labelled
+`cmd:verify-needs-<machine>` for another machine are not for this session: list them as waiting.
+
+## 4. Report (at most about 15 lines)
 
 - **Where things stand**: one or two lines.
 - **Now**: the items in progress.
-- **Waiting on Kade / Needs <machine> / NOT VERIFIED**: decisions assigned to him, checks that
-  wait for a machine or device (say which), and anything unproven.
-- **Proposed next task**: one task, with the gate it needs and whether this session can run it.
+- **Machine**: name it in one line.
+- **Waiting on Kade** first (decisions assigned to him), then **Needs <this machine>** (this session can run
+  them), then **Needs <other machine>** (say which machine they wait for), then anything unproven.
+- **Proposed next task**: one task, with the gate it needs and whether this session can run it; never a
+  check that needs another machine.
 
 Then ask him to confirm or redirect.
