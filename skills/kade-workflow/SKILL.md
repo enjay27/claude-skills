@@ -37,6 +37,13 @@ and see it fail for the right reason, then write the code. If a change cannot be
 - A blocked network host is **asked for**, never worked around: name the host and what needs it.
   No mirrors, stubs or patched dependencies.
 
+## 4a. Fresh review
+
+- After the gates pass on a **behaviour change**, run the `fresh-review` skill before the PR (or
+  before reporting a locally committed task done). Skip it for moves, docs and behaviour-free config.
+- Fixing a CRITICAL or HIGH finding counts toward the 2 self-corrections above.
+- The verdict goes under *Verified*; findings left unfixed go under *NOT VERIFIED*.
+
 ## 5. Commit and pull request
 
 - `git status` **before** `git add -A`, never after. Never commit work you did not do;
