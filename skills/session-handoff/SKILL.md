@@ -23,16 +23,10 @@ Finish the current step. Do not start anything new.
 
 ## 3. Record state
 
-- **Org Project repositories:** label the issue (`cmd:status-now` for the parked task,
+- **Org Project repositories** (Stella Rain, Resonance): label the issue (`cmd:status-now` for the parked task,
   `cmd:verify-needs-windows`, `-macos`, `-android`, `-iphone` or `cmd:verify-not-verified` where
   it applies; a decision waiting for Kade: assign the issue to him). Create an issue for
   any follow-up discovered in this session.
-- **Label repositories** (resonance-stream, resonance-lab): `status:now` on the parked task's
-  issue (and off any issue no longer in progress); `verify:needs-kade` or `verify:not-verified`
-  where it applies, removed once proven. A follow-up found this session gets its own issue,
-  created with its labels in the same call. Over REST:
-  `gh api repos/<owner>/<repo>/issues/<n>/labels -f "labels[]=status:now"`, and `DELETE` on
-  `.../labels/<name>` to remove one.
 - **`MEMORY.md` repositories:** update *Now* (one line per item, link the PR or branch),
   commit it with the work.
 - Do not write a handoff or session file unless the repository's `CLAUDE.md` still asks for one.
