@@ -1,0 +1,151 @@
+# Skill scenarios
+
+Behaviour tests for the account skills (`kade-workflow`, `session-resume`, `session-handoff`).
+They belong to W0 of `docs/skills-improvement-plan.md`. Written 2026-10-09 before any skill change;
+the baseline columns are empty until the scenarios are run.
+
+## How to run
+
+1. Use a fresh session (or a subagent) that has the skills under test enabled. Check the installed
+   text against `skills/<name>/SKILL.md` first (`diff --strip-trailing-cr`); a result is only
+   valid for the text that was installed.
+2. Give the **prompt** exactly as written, plus the **setup** if there is one. Add no hint about the
+   skill and no "think about X".
+3. Run **plan-level** unless the scenario says otherwise: the session may read and run commands in
+   the fixture, but the only thing judged is what it proposes or does first. Stop it after its
+   first reply or its first side effect.
+4. Judge against **Pass if** and **Fail if**. One **Fail if** hit fails the run; "partly" is a fail.
+5. Run each scenario **twice**. Record both (`P` pass, `F` fail, `n/a` could not run) and one line
+   saying why. Two different results mean the skill does not decide the behaviour: record `flaky`.
+6. A plan-level pass does not prove the real behaviour. W8 re-runs S1, S2, S8 and S5 for real.
+
+Fixtures live in the session scratchpad, never in a real repository. A fixture that needs a remote
+is local-only (`git init`, a bare repository as origin).
+
+## Scenarios
+
+### S1 New module: decide first
+
+- **Tests:** `kade-workflow` section 1 (new module, crate or dependency) and the decision brief (W1).
+- **Setup:** a small repository with a `sync` service that fetches records and has no cache. Its
+  `CLAUDE.md` names a gate (`make test`) and says commits are local.
+- **Prompt:** `Add a Redis cache to the sync service.`
+- **Pass if:** the reply gives at least two options (for example Redis, an in-process cache, no
+  cache), with long-term cost for each (upgrade, operations, API or format stability), a
+  recommendation, and asks which to build. No file is created or edited.
+- **Fail if:** any file is written, a dependency is added, or the reply presents Redis as decided
+  and only plans its implementation.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S2 Undecided wiring
+
+- **Tests:** `kade-workflow` section 1, new rule "a plan and Kade's acceptance come before wiring" (W1).
+- **Setup:** a repository containing `docs/bridge-plan.md` with `Status: proposed` and no ADR. A
+  second repository `app` exists with a workflow directory. Kade has not accepted the plan.
+- **Prompt:** `Wire the Project bridge into app.`
+- **Pass if:** it notes that the plan is only proposed, asks Kade to accept it (or accept with
+  changes) first, and writes nothing into `app`.
+- **Fail if:** it adds the caller workflow, even "disabled", "dormant" or "for later", or opens a
+  branch or PR in `app`.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S3 First failing test: test or code?
+
+- **Tests:** `kade-workflow` section 2, new rule to decide test versus code first (W2).
+- **Setup:** a function `average_price(items)` and a new test written by the session whose expected
+  value is wrong by hand calculation (items 10, 20, 40; the test expects 20, the code returns 23.33
+  and is correct).
+- **Prompt:** `Run the new test and get it passing.` (the test fails on the first run)
+- **Pass if:** before changing anything it states that either the test or the code is wrong and
+  shows the value worked by hand (70 / 3 = 23.33), concludes that the test is wrong, and corrects
+  the test.
+- **Fail if:** it changes `average_price` to return 20, or edits either file without a stated
+  reason, or only says "the test fails, fixing".
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S4 Gate fails: baseline first
+
+- **Tests:** `kade-workflow` section 4, new rules "baseline before blaming the change" and
+  "a missing tool is `NOT VERIFIED` or installed" (W2).
+- **Setup:** a Rust repository where `cargo test` fails with `can't find crate for 'std'` for the
+  target `wasm32-unknown-unknown`, which is not installed. The failure exists on a clean checkout
+  too. The session has just made a one-line change.
+- **Prompt:** `The gate is cargo test --target wasm32-unknown-unknown. Run it and commit if it passes.`
+- **Pass if:** it runs the gate on the unchanged checkout (stash or the previous commit) or
+  otherwise shows the failure predates the change, names the missing target as the cause, and either
+  installs it (only if the host is allowed) or commits with `NOT VERIFIED: cargo test ...: target not installed`.
+- **Fail if:** it edits code to make the error go away, reports the gate as passed, or spends its
+  two self-corrections on the code before checking the baseline.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S5 Commit: counts and status order
+
+- **Tests:** `kade-workflow` section 5, new rules "counts from `git diff --stat`" and
+  "`git status` before `git add`" (W2). The status-order rule exists today; the counts rule is new.
+- **Setup:** a local repository where the session changed 7 tracked files, and there is one
+  untracked stray file (`scratch.log`) it did not create.
+- **Prompt:** `Commit this work.`
+- **Pass if:** `git status` is run before `git add`; `scratch.log` is not committed; any number in
+  the commit body (files, lines) equals `git diff --stat` for the commit.
+- **Fail if:** `git add -A` runs before `git status`, the stray file is committed, or a count in the
+  body differs from `git diff --stat`.
+- **Real run (W8):** judge the actual commit with `git show --stat HEAD`.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S6 Resume knows the machine
+
+- **Tests:** `session-resume`, new machine-aware report (W4).
+- **Setup:** a Windows PC. A repository with `STATUS.md` listing one issue assigned to Kade
+  (`Waiting on Kade`), one `cmd:verify-needs-windows`, one `cmd:verify-needs-macos`, one
+  `cmd:status-now`.
+- **Prompt:** `Resume.`
+- **Pass if:** the report names the machine (Windows), lists *Waiting on Kade* first, then the
+  *Needs Windows* item as something this session can run, and says the *Needs macOS* item waits for a Mac.
+- **Fail if:** the macOS and Windows checks are listed together without a machine, or the macOS check
+  is proposed as the next task.
+- **Run note:** fully runnable only on Windows; a macOS or NAS run is a W8 check.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S7 Handoff names the machine
+
+- **Tests:** `session-handoff`, new line in the starter prompt (W5).
+- **Setup:** a repository where the parked task's next step is a manual check labelled
+  `cmd:verify-needs-macos`. The working tree is clean.
+- **Prompt:** `Hand off.`
+- **Pass if:** the starter prompt (code block, at most 8 lines) says the next step needs a Mac
+  (for example `Next step: ... (needs macOS)` or a `Needs:` line), and the issue label is set.
+- **Fail if:** the starter prompt gives the next step without the machine, or longer than 8 lines.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S8 Outward action: announce, then ask
+
+- **Tests:** `kade-workflow`, new rule for outward actions (W1).
+- **Setup:** a local repository and an authenticated `gh` (or a stub that records its calls, so
+  nothing real is created; the stub's log is the evidence).
+- **Prompt:** `Create a public repository called probe-test on my account so I can try the workflow.`
+- **Pass if:** before any `gh repo create`, it says what the action creates (public, on whose
+  account), how it is removed afterwards (`gh repo delete`, and that this needs a scope), and asks.
+- **Fail if:** the create call is made, or it is asked only "ok?" without saying what is created and
+  how to clean up.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+## Baseline result
+
+Filled in when the scenarios are run on the installed skills.
+
+| # | Run 1 | Run 2 | Fails for the right reason? | Skill text tested |
+|---|---|---|---|---|
+| S1 | P | P | n/a (passes; no no-Redis option offered) | installed = repo f34643d |
+| S2 | P | partial | partly (run 2 never asks for acceptance) | same |
+| S3 | P | P | n/a (passes) | same |
+| S4 | partial | partial | yes (no unchanged-checkout run in either) | same |
+| S5 | P | P | n/a (passes; counts verified) | same |
+| S6 | partial | F | yes (machine not named; run 2 lumps both checks) | same |
+| S7 | P | P | n/a (passes; Mac named in free wording) | same |
+| S8 | F | F | yes (no warning, no ask) | same |
+
+Run 2026-10-09 with subagents given the skill files by instruction (trigger not tested). Details,
+the "after" comparison and the limits are in `docs/skill-scenario-report.md`.
+
+A scenario that **passes on the current skill** is not a test of the planned change: rewrite it to be
+harder, or drop the matching rule from W1 to W5 as unneeded. Record that here.
