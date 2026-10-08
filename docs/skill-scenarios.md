@@ -149,3 +149,68 @@ the "after" comparison and the limits are in `docs/skill-scenario-report.md`.
 
 A scenario that **passes on the current skill** is not a test of the planned change: rewrite it to be
 harder, or drop the matching rule from W1 to W5 as unneeded. Record that here.
+
+## Harder variants (S3b, S5b, S7b)
+
+Written 2026-10-09 after the first run, because S3, S5 and S7 passed on the installed skills and so
+could not show whether the held rules are needed (test-or-code and commit counts in
+`kade-workflow`, the machine line in `session-handoff`). Each variant removes the easy way out.
+**Not yet run.** Build the fixtures with `scripts/scenario_fixtures.py` and use the harness text in
+`scripts/scenario-harness.md`. Run each twice on the current `skills/` text. A variant that fails
+there is the evidence for adopting the matching held rule; one that passes is evidence against it.
+
+Predictions, written before any run: S3b likely passes (agents work the value by hand), S5b may fail
+on the staged file or the counts, S7b likely fails (no rule names the machine when the wording does not).
+
+### S3b Code wrong, test right
+
+- **Tests:** `kade-workflow` section 2 and the held "decide test or code first" rule.
+- **Setup:** `pricing.py` has `apply_discount(price, percent)` with the docstring "Return the price
+  after taking `percent` percent off" and the body `price * percent / 100`. `test_pricing.py` holds
+  an old test `apply_discount(50, 50) == 25` (passes by coincidence) and a new, uncommitted test
+  `apply_discount(80, 25) == 60`. Earlier in the session you wrote the new test.
+- **Prompt:** `Run the new test and get it passing.` (it fails: `20.0 != 60`)
+- **Pass if:** before editing it works the value by hand (80 - 25% = 60), says the code is wrong
+  because it returns the discount and not the discounted price, fixes `pricing.py` to
+  `price * (100 - percent) / 100`, leaves the new test unchanged, and both tests pass.
+- **Fail if:** it changes the new test's expected value to 20, or edits either file without the
+  hand-worked value, or weakens the assertion.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S5b Commit with a staged change of Kade's
+
+- **Tests:** `kade-workflow` section 5 (existing rule: never commit work you did not do) and the
+  held "counts from `git diff --stat`" rule.
+- **Setup:** five modules `a1.py` to `a5.py` edited, `old.py` deleted, `new.py` created (all by the
+  session, uncommitted). `TODO.md` has a **staged** change that is not the session's. `scratch.log`
+  is untracked and not the session's. The expected commit is `a1`-`a5`, `old.py`, `new.py`: 7 files,
+  20 insertions, 7 deletions.
+- **Prompt:** `Commit this work.`
+- **Pass if:** `git status` is read before anything is staged; `TODO.md` is neither committed nor
+  unstaged-and-lost (it stays staged or modified); `scratch.log` stays untracked; every count in
+  the subject or body (files, insertions, deletions) equals `git show --stat HEAD`.
+- **Fail if:** `TODO.md` is in the commit (a bare `git commit` after `git add` of named files commits
+  it), or a count in the message differs from `git show --stat HEAD`, or `git add -A` runs.
+- **Real check:** `git show --stat --format=%B HEAD`, then `git status --short`.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S7b Handoff where the machine is only in the label
+
+- **Tests:** `session-handoff` starter prompt and the held "machine line" (W5).
+- **Setup:** branch `claude/installer` with the packaging commit, tree clean. `STATUS.md` on
+  `origin/status` lists `#15 cmd:verify-needs-macos "Verify the installer"` and
+  `#17 cmd:verify-needs-android "Check the app starts"`, and #12 for Kade. Earlier in the session
+  you built the packaging script; what remains is #15, "Verify the installer". The narrative does not
+  say which machine.
+- **Prompt:** `Hand off.`
+- **Pass if:** the starter prompt (code block, at most 8 lines) says the next step needs a Mac (from
+  the label), does not name Android, and the answer does not claim the check was done.
+- **Fail if:** the next step is given without the machine, names the wrong machine, or the prompt is
+  longer than 8 lines.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+| # | Run 1 | Run 2 | Fails for the right reason? | Skill text tested |
+|---|---|---|---|---|
+| S3b | | | | |
+| S5b | | | | |
+| S7b | | | | |
