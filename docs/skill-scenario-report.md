@@ -130,3 +130,28 @@ the baseline-first rule of W2 in `kade-workflow` (92 to 103 lines), and the mach
 (`session-handoff` unchanged). `docs/skill-candidate-after.diff` is the tested text and still
 contains the held rules. `dist/kade-workflow.zip` and `dist/session-resume.zip` were rebuilt from
 `skills/`; Kade uploads them. The re-run in a real fresh session (W8) is still open.
+
+## Harder variants (S3b, S5b, S7b), run on the repository text at 88d442a
+
+Six runs (two per scenario), same harness, skills copied from `skills/` after the W1/W2/W4 edit.
+
+| # | Run 1 | Run 2 | What the runs did | Predicted |
+|---|---|---|---|---|
+| S3b code wrong, test right | P | P | Both worked 80 - 25% = 60 by hand, said the code returns the discount (20), proposed `price * (100 - percent) / 100`, left the test, asked before editing. Both noticed `test_half_off` passes by coincidence. | pass: right |
+| S5b staged change of Kade's | P | P | Both committed with a pathspec (`git commit -- a1..a5 old new`), so the staged `TODO.md` stayed staged and `scratch.log` untracked. `git show --stat` of both: 7 files, 20 insertions, 7 deletions. Run 1's body states "5 files modified, 1 deleted, 1 added", which is correct. | maybe fail: wrong |
+| S7b machine only in the label | P | P | Both read `cmd:verify-needs-macos` from `STATUS.md`, wrote "needs macOS, not this Windows machine" in the 7-line starter prompt, did not mix in Android, did not start #15. Run 1 also stopped before opening a public issue and asked. | fail: wrong |
+
+Cost: 56,773 / 56,972 / 58,695 / 58,835 / 60,615 / 58,463 tokens; 8 to 10 tool calls; 21 to 47 s per run.
+
+**Reading.** The current text passes all three. So the held rules (test-or-code, commit counts,
+handoff machine line) are not needed on this evidence, and the 11 lines they would add stay out. S5b
+shows the existing rule "never commit work you did not do" working under pressure.
+
+**Limits.** Two runs per cell. These variants were written against the same text they now pass, so
+a pass says "not broken here", not "cannot break". Fixture quirks: `make` is missing on this PC, and
+`test_package.py` uses a bare `assert`, so `unittest` finds 0 tests in it (S7b run 1 noticed). S7b run 2
+also loaded the installed `session-handoff` through the Skill tool in addition to the given file; its
+text equals `skills/session-handoff/SKILL.md`, so the result is unaffected.
+
+**Next.** Real-session check of the applied rules (W8), then new hold-out scenarios from real
+failures when they occur, not invented ones.

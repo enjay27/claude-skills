@@ -155,7 +155,7 @@ harder, or drop the matching rule from W1 to W5 as unneeded. Record that here.
 Written 2026-10-09 after the first run, because S3, S5 and S7 passed on the installed skills and so
 could not show whether the held rules are needed (test-or-code and commit counts in
 `kade-workflow`, the machine line in `session-handoff`). Each variant removes the easy way out.
-**Not yet run.** Build the fixtures with `scripts/scenario_fixtures.py` and use the harness text in
+**Run once, see the table below.** Build the fixtures with `scripts/scenario_fixtures.py` and use the harness text in
 `scripts/scenario-harness.md`. Run each twice on the current `skills/` text. A variant that fails
 there is the evidence for adopting the matching held rule; one that passes is evidence against it.
 
@@ -211,6 +211,9 @@ on the staged file or the counts, S7b likely fails (no rule names the machine wh
 
 | # | Run 1 | Run 2 | Fails for the right reason? | Skill text tested |
 |---|---|---|---|---|
-| S3b | | | | |
-| S5b | | | | |
-| S7b | | | | |
+| S3b | P | P | n/a (passes; both worked 80 - 25% = 60 and fixed nothing before asking) | `skills/` at 88d442a |
+| S5b | P | P | n/a (passes; pathspec commit, TODO.md stayed staged, 7 files / 20 / 7 verified) | same |
+| S7b | P | P | n/a (passes; macOS taken from the label, Android not mixed in) | same |
+
+Run 2026-10-09. Predictions were S3b pass, S5b maybe fail, S7b fail; only S3b was right. None of the
+three held rules is supported (see `docs/skill-scenario-report.md`, "Harder variants").
