@@ -49,7 +49,8 @@ trust it, then confirm against the sources above.
 
 - **Where things stand**: one or two lines.
 - **Now**: the items in progress.
-- **Needs Kade / NOT VERIFIED**: anything waiting on him or unproven.
+- **Waiting on Kade / Needs <machine> / NOT VERIFIED**: decisions assigned to him, checks that
+  wait for a machine or device (say which), and anything unproven.
 - **Proposed next task**: one task, with the gate it needs and whether this session can run it.
 
 Then ask him to confirm or redirect.

@@ -24,7 +24,8 @@ Finish the current step. Do not start anything new.
 ## 3. Record state
 
 - **Org Project repositories:** label the issue (`cmd:status-now` for the parked task,
-  `cmd:verify-needs-kade` or `cmd:verify-not-verified` where it applies). Create an issue for
+  `cmd:verify-needs-windows`, `-macos`, `-android`, `-iphone` or `cmd:verify-not-verified` where
+  it applies; a decision waiting for Kade: assign the issue to him). Create an issue for
   any follow-up discovered in this session.
 - **Label repositories** (resonance-stream, resonance-lab): `status:now` on the parked task's
   issue (and off any issue no longer in progress); `verify:needs-kade` or `verify:not-verified`

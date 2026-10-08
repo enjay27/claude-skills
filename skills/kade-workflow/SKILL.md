@@ -13,6 +13,9 @@ state lives. This skill says **how** to work in any of them. Where they differ, 
 - Locate the code first (graft if the repo has it, otherwise search), then present an impact
   analysis: which files change, what logic changes, what does not, which gate applies, and
   whether this session can run that gate.
+- **A new module, crate or dependency is decided with Kade first**: bring the options, their
+  trade-offs for long-term release maintainability (API and format stability, upgrade cost,
+  tooling lock-in) and your recommendation, then build after he picks.
 - **Wait for Kade's explicit approval.** Approval covers the steps in the plan, nothing more.
   A new step that widens the scope goes back to him.
 - "Follow your recommendation" from Kade means: do what you recommended.
@@ -58,7 +61,9 @@ and see it fail for the right reason, then write the code. If a change cannot be
 ## 6. Record state where the repository keeps it
 
 - **Org Project repositories** (Stella Rain): issues plus `cmd:` labels
-  (`cmd:status-now`, `cmd:verify-needs-kade`, `cmd:verify-not-verified`), never a state file.
+  (`cmd:status-now`, `cmd:verify-not-verified`), never a state file. A check that needs a
+  machine or a device: `cmd:verify-needs-windows`, `-macos`, `-android` or `-iphone`. A decision
+  that is Kade's: assign the issue to him, no label; work a session can take stays unassigned.
 - **Label repositories** (resonance-stream, resonance-lab): issues with `status:now|next` and
   `verify:needs-kade|not-verified` labels, read and written over REST. A label is state: it stays
   until the state changes. No `status:` label = backlog; an open PR = in review.
