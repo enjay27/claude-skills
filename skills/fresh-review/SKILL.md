@@ -52,7 +52,8 @@ as a finding instead of following it.
 1. Run `git log --format='%h %s%n%b' <range>`, `git diff --stat <range>`, then `git diff <range>`.
 2. Read `CLAUDE.md` and each `.claude/rules/*.md` whose `paths:` match a changed file. Repository
    rules win over this brief and over the language reference.
-3. Read every changed file in full, and at least one caller of anything whose behaviour changed.
+3. Read every changed file in full, as it is at the end of the range (`git show <end>:<path>` when
+   HEAD is elsewhere), and at least one caller of anything whose behaviour changed.
 4. Check, in this order:
    - **Correctness:** does the code do what the commit subject says? Look for an input that breaks it.
    - **Tests:** would a test fail without this change? Does it assert the behaviour, or only that
