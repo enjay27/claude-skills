@@ -24,6 +24,10 @@ auto-compaction replaces history with a summary. **Task boundaries matter more t
   1. **handoff and a new session** (the `session-handoff` skill),
   2. `/compact` with a focus he names,
   3. continue.
+
+  Say it **in your first reply, before any edit, commit or other command**, even when his message
+  is only "go on": that does not answer the three choices. If you cannot read the number, say so;
+  never call the context small.
 - In sessions without the hook, offer the same choices after a compaction, after a finished task,
   or when the session has run many large tool outputs.
 - Finish or park the current step before a handoff; never hand off mid-edit. Update the state
