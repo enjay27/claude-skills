@@ -1,13 +1,15 @@
-# Plan: one global rule set, plus rules per repository
+# Plan: `claude-global`, one global rule set checked out as `~/.claude`, plus rules per repository
 
 - **Scope:** where Kade's coding and workflow conventions live, how they reach local and cloud
   sessions, and what each repository keeps for itself.
-- **Status:** proposed 2026-10-09, revised the same day after checking the Claude Code docs
-  (section 9). Nothing is changed yet; every step below waits for Kade's yes.
+- **Status:** proposed 2026-10-09, revised the same day: checked against the Claude Code docs
+  (section 12), then reshaped around a new repository, `claude-global`, checked out as
+  `~/.claude`. Nothing is changed yet; every step waits for Kade's yes.
 - **Related:** `docs/refactor-plan.md` (the current setup), `docs/skills-improvement-plan.md`
   (what the account skills should say).
-- **Decision wanted:** whether to adopt option B (below), the pin policy in section 5, and whether
-  the clone also carries the hook and the skills (step 4).
+- **Decisions wanted:** the split into two repositories (section 4); tag protection and the
+  auto-update rule (section 6); whether `settings.json` stays untracked (section 5).
+- **Home:** this file moves to `claude-global` in step 0.
 
 ## 1. The question
 
@@ -33,157 +35,276 @@ of a skill equals the file in this repository.
 
 ## 3. The options
 
-| | A. Today | B. Clone this repository at cloud-session start | C. Plugin from a git marketplace | D. CI opens sync PRs into every repository |
+| | A. Today | B. A global repository checked out as `~/.claude` | C. Plugin from a git marketplace | D. CI opens sync PRs into every repository |
 |---|---|---|---|---|
-| Always-on global text | No | Yes, in `~/.claude/CLAUDE.md` and `~/.claude/rules/` | Locally only, through a plugin `SessionStart` hook (plugins cannot ship `CLAUDE.md`). **Cloud sessions do not install plugins a repository enables** | Yes, as a file in each repository |
-| Skills and hook | Account skills; hook copied | From the same clone, into `~/.claude/skills/` and `~/.claude/hooks/` (step 4), or as today | Both, but again not in the cloud | Copies in each repository |
-| Cloud and local identical | Partly | Yes, same source on PC, Mac and cloud | No | Yes |
-| Update path | Upload skills by hand; edit hook copies | Edit once here, bump the pinned tag in the setup script | Edit once here, bump the plugin version | Edit once here, merge one PR per repository |
-| Context cost | Low | Higher: the text is in every turn, so keep it short | Low (skills load on demand) | Higher, same as B |
-| New moving parts | None | A read-only token as an environment variable; network allowlist; a tag to maintain | Marketplace entry in each repository's `settings.json` | A sync workflow and a token that can open PRs |
-| Failure mode | Silent drift | Failed clone leaves sessions without the rules (made loud, step 3); stale tag | Plugin not installed in a session | PR left unmerged, so a repository lags |
-| Trust | Uploaded skills and repo files | Everything in this repository is trusted instructions for every session | Same | Same, but each change is reviewed per repository |
-| Review of a change | Per repository | One place, but a bad change reaches all repositories at once | Same as B | Per repository |
+| Always-on global text | No | Yes, `~/.claude/CLAUDE.md` and `~/.claude/rules/` | Locally only, through a plugin `SessionStart` hook (plugins cannot ship `CLAUDE.md`). **Cloud sessions do not install plugins a repository enables** | Yes, as a file in each repository |
+| Hook | Copied into each repository | Once, in `~/.claude/hooks/`, registered at user level | Yes, but not in the cloud | Copies in each repository |
+| Cloud and local identical | Partly | Yes, same tag on PC, Mac and cloud | No | Yes |
+| Update path | Upload skills by hand; edit hook copies | Push a tag; every session moves to it at its next start (section 6) | Bump the plugin version | Merge one PR per repository |
+| Context cost | ~270 tokens of skill descriptions always; skill bodies when used | A + ~1,000 tokens for a 60-line `CLAUDE.md`, offset by what moves out of `kade-workflow` and repository files | Same as A | Same as B |
+| New moving parts | None | A read-only token in the cloud environment; the sync hook; tag protection | Marketplace entry in each repository's `settings.json` | A sync workflow and a token that can open PRs |
+| Failure mode | Silent drift | Fetch fails: the session keeps the tag it has and says so; a bad tag reaches every session | Plugin not installed in a session | PR left unmerged, so a repository lags |
+| Review of a change | Per repository | One place, one release (the tag) | Same as B | Per repository |
+
+Context cost in numbers: the always-on text is cached after the first turn, so it occupies about
+0.5% of a 200k window rather than being paid in full each turn. `kade-workflow` (~1,650 tokens)
+already loads in most sessions; moving its short rules into the global `CLAUDE.md` can make B
+cost close to nothing net. The real cost is attention, hence the 60-line cap.
 
 Rejected:
 
-- A git submodule in each repository: friction on both machines and in cloud checkouts for no gain
-  over B or D.
-- The global text pasted into the setup script, with no clone: no token needed, but the text then
-  lives in the app's settings, where it cannot be diffed or reviewed, and drifts like the uploaded
-  skills.
-- A `SessionStart` hook committed to each repository that fetches the text: it does run in cloud
-  sessions, but it is one copy per repository (the problem of D) and still needs the token.
+- A git submodule, or a nested clone in each repository's `.claude/`: the outer repository cannot
+  track files inside a nested repository, so repository-specific rules lose their home, and cloud
+  checkouts do not bring the nested clone along.
+- The global text pasted into the cloud setup script: no token needed, but the text then lives in
+  the app's settings, where it cannot be diffed or reviewed.
+- A `SessionStart` hook committed to each repository that fetches the text: one copy per
+  repository (the problem of D), and it still needs the token. Kept only as the fallback in
+  section 8 if user-level hooks do not run in the cloud.
 - Managed policy `CLAUDE.md` or server-managed settings: the only documented route that reaches
   cloud sessions with plugins, but it is for organisations, not one person's account.
 
-## 4. Recommendation
+## 4. Recommendation: two repositories
 
-Adopt **B**. Start with the short, always-on text; let the same clone carry the hook and the skills
-once step 4 shows the cloud honours them.
+Adopt **B** with a new repository.
 
-- `global/CLAUDE.md` (here): the few rules that must always apply: coding conventions, the order
-  plan, test, gate, commit; where state is recorded; the Windows shell traps. Target: under 60
-  lines. Long procedures stay in skills, which load on demand. The first line is a version stamp,
-  `Global rules: v<tag>`, so a session can say which version it loaded.
-- `global/rules/*.md` (here): path-scoped global rules only if one is needed (*unverified*: the
-  docs show `paths:` for project rules, not explicitly for user-level ones).
-- Each repository's `CLAUDE.md`: repo facts only, plus a short section **"Overrides of global
-  rules"** that names each global rule it changes. Claude Code does not enforce "the repository
-  wins"; both files are simply in context, so an unstated conflict is a guess.
-- Hook and skills: today's setup until step 4. If step 4 passes, the vendored hook copies and the
-  hand uploads go away, and with them the drift checks for both.
+| Repository | Holds | Reaches sessions through |
+|---|---|---|
+| `claude-skills` (this one) | Account skills only: `skills/`, the scenario harness in `scripts/`, the skill docs (`skill-scenarios.md`, `skill-scenario-report.md`, `skills-improvement-plan.md`, `skill-candidate-after.diff`) | Uploaded as account skills (unchanged) |
+| `claude-global` (new) | Everything that applies to every repository: the global `CLAUDE.md`, `rules/`, `hooks/` (`context-guard.cjs`, the new `global-sync.cjs`, their tests), the settings fragment, the cloud setup script, this plan and `refactor-plan.md` | Checked out as `~/.claude` on the PC, the Mac and in the cloud |
 
-Why not C: cloud sessions do not install plugins a repository turns on, so C fails the one
-constraint that matters (section 1). Why not D: it makes every global edit a merge in every
-repository, and the copies still exist.
+Name: `claude-global` names what the repository is for, pairs with `claude-skills`, and avoids
+`dot-claude` or `.claude`, which read like a project's `.claude/` folder.
 
-## 5. Steps
+Each repository's `CLAUDE.md` keeps repo facts only, plus a short section **"Overrides of global
+rules"** that names each global rule it changes. Claude Code does not enforce "the repository
+wins"; both files are simply in context, so an unstated conflict is a guess.
 
-1. **Prove the cloud clone** (was step 3; every other step depends on it). In a throwaway cloud
-   environment:
-   - add `GH_TOKEN`: a fine-grained token, read-only, for `enjay27/claude-skills` only, with an
-     expiry. The setup script runs before the session connects to the GitHub proxy, so the access
-     granted to the Claude app is not expected to cover a clone from the script. Every session in
-     the environment can read the token, so it must grant nothing else;
-   - allow `github.com` in the network settings;
-   - run the script below with a test `global/CLAUDE.md` and check `/context` lists
-     `/root/.claude/CLAUDE.md`.
+Skills stay out of `~/.claude/skills/`: they reach every surface as account skills, and a second
+copy of the same name would clash.
 
-   ```bash
-   tag=v2026.10.09   # bump on purpose; see the pin policy below
-   d="$HOME/.claude-global"
-   mkdir -p "$HOME/.claude/rules"
-   rm -rf "$d"
-   if git clone --depth 1 --branch "$tag" \
-        "https://x-access-token:${GH_TOKEN}@github.com/enjay27/claude-skills" "$d"; then
-     cp "$d/global/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
-     cp -r "$d/global/rules/." "$HOME/.claude/rules/" 2>/dev/null || true
-     rm -rf "$d"   # the token is in the clone's .git/config; keep only the copied files
-   else
-     echo "GLOBAL RULES FAILED TO LOAD ($tag). Tell Kade before doing anything else." \
-       > "$HOME/.claude/CLAUDE.md"
-   fi
-   exit 0
-   ```
+## 5. The `claude-global` repository
 
-   The script fails soft on purpose: with `set -e`, a GitHub outage would stop every session in the
-   environment from starting. The fallback file makes the failure the first thing the session says.
+```
+claude-global/
+  .gitignore              allowlist, below
+  .gitattributes          * text eol=lf   (Windows checkouts keep LF in .cjs and .md)
+  CLAUDE.md               line 1: "Global rules: v<tag>"; under 60 lines
+  rules/*.md              global path-scoped rules, only if needed
+  hooks/
+    context-guard.cjs     moved from claude-skills; path now $HOME/.claude/hooks/
+    global-sync.cjs       new: update to the latest tag, merge the settings fragment
+    *.test.cjs
+  settings.global.json    the hook entries that global-sync merges into ~/.claude/settings.json
+  setup/cloud-setup.sh    the text pasted into the cloud environment's setup script
+  scripts/release.sh      sets the stamp in CLAUDE.md, commits, tags
+  docs/                   this plan, refactor-plan.md
+  README.md
+```
 
-   **Pin policy:** pin a tag, never `main`. The cloud caches the result of the setup script and
-   reruns it only when the script or the allowed hosts change, or after about seven days. A
-   moving branch would therefore lag by up to a week without a sign; bumping the tag edits the
-   script, which forces the rerun. The tag bump is the update.
-2. **Draft `global/`** here: `CLAUDE.md`, and a note on what each line replaced. Move rules out of
-   repository `CLAUDE.md` files only when they are global; list the candidates first and let Kade
-   confirm each.
-3. **Local setup on the PC and Mac:** no copy. `~/.claude/CLAUDE.md` holds one import line,
-   `@~/<path to this clone>/global/CLAUDE.md` (the docs confirm `~` in imports), plus any personal
-   lines. `git pull` here updates it; nothing is overwritten. Same for `~/.claude/rules/`
-   (symlinks, or one import per file on Windows). Test on the PC, then the Mac.
-4. **Hook and skills from the clone** (decision for Kade). Extend the setup script, and the local
-   setup, to install `hooks/context-guard.cjs` into `~/.claude/hooks/`, register it in
-   `~/.claude/settings.json`, and copy `skills/*` into `~/.claude/skills/`. Check first, in the
-   same throwaway environment:
-   - that a user-level `settings.json` written by the setup script is honoured in a cloud session
-     (*unverified*);
-   - that user-level skills load in the cloud, and how a name clash with the account skills of the
-     same name resolves; rename or remove the account copies if needed.
+**Only some paths are deployed.** `~/.claude` is a sparse checkout of
+`/CLAUDE.md /rules/ /hooks/ /settings.global.json /.gitignore /.gitattributes`. `setup/`,
+`scripts/`, `docs/` and the README exist only in the development clone.
 
-   If both pass, delete the vendored hooks (one PR per repository) and stop uploading skills for
-   Claude Code; the account copies remain only for claude.ai chat and Cowork, if those still use
-   them. If either fails, keep today's hook and skills and do step 5.
-5. **Drift checks, only for what step 4 did not remove:** a test here that the account skill files
-   match what was uploaded (by hash in the README); for the hook, each repository stores the
-   expected hash next to its copy and a test here prints the current one. A cross-repository CI
-   comparison would need a token to read this private repository in every repository's CI.
-6. **Cut the duplicates** from repository `CLAUDE.md` files once the global text is verified in a
-   live cloud session, and add the "Overrides of global rules" section where needed. One pull
-   request per repository.
+**Two clones on each local machine:**
 
-## 6. Open questions
+- `~/src/claude-global` (or wherever Kade keeps repositories): the development clone. Edits,
+  tests and pull requests happen here.
+- `~/.claude`: the deployed checkout, detached at a tag, sparse, never edited by hand. An edit
+  made here would apply to every session at once, before any review.
+
+**`.gitignore` is an allowlist.** `~/.claude` also holds session transcripts (`projects/`),
+history, caches and, on Linux, the login credentials (`.credentials.json`). A normal ignore list
+is one forgotten line from pushing those. So:
+
+```gitignore
+*
+!.gitignore
+!.gitattributes
+!CLAUDE.md
+!rules/
+!rules/**
+rules/local*.md
+!hooks/
+!hooks/**
+!settings.global.json
+```
+
+A test fails when any tracked path is outside that list. Machine-only text goes in
+`~/.claude/rules/local.md`, which is loaded as a user rule and never tracked.
+
+**`settings.json` is not tracked.** Claude Code writes it itself (an "always allow" at user
+level, `/config`, a plugin enable), so a tracked copy would differ on every machine and pulls
+would conflict. `global-sync.cjs` merges the entries in `settings.global.json` into it instead:
+it owns only hook entries whose command points into `$HOME/.claude/hooks/`, replaces those, and
+leaves every other key alone. Changed hook settings apply from the next session, because a
+session reads its hooks at start.
+
+## 6. Updates: `global-sync.cjs`
+
+Registered as a user-level `SessionStart` hook (matcher `startup`), timeout 10 seconds. It never
+fails a session: every path exits 0.
+
+1. `git ls-remote --tags origin 'v*'`: one small request; picks the highest tag.
+2. If it equals the checked-out tag: nothing to do.
+3. Otherwise: `git fetch --depth 1 origin tag <new>`, `git checkout --detach <new>`, merge
+   `settings.global.json`, and print the new `CLAUDE.md` to stdout with one line,
+   `Global rules updated v<old> -> v<new>; this text replaces the v<old> text loaded at start.`
+   Claude Code adds a `SessionStart` hook's stdout to the context, so the session already runs on
+   the new rules. (*Unverified:* whether a `CLAUDE.md` changed by the hook is reloaded anyway; if
+   it is, the print is dropped.)
+4. If the network or the token fails: print `Global rules: could not check for updates; using
+   v<current>.` and stop.
+
+**A tag is a release.** Pushing `v2026.10.12` reaches every session at its next start, on every
+machine. So:
+
+- `scripts/release.sh` is the only way to tag: it writes the stamp into line 1 of `CLAUDE.md`,
+  runs the tests, commits, tags. A CI check on tag push fails when the stamp and the tag differ.
+- A tag ruleset on GitHub lets only Kade create `v*` tags, and `main` requires a PR.
+- `global-sync.cjs` is the one file whose bug could stop updates everywhere, since it updates
+  itself. It stays small, has the most tests, and every release is first tried in one session
+  before Kade relies on it. Recovery by hand: `git -C ~/.claude checkout --detach <good tag>`
+  locally; bump the tag in the cloud setup script.
+
+**Cloud caching.** The cloud caches the setup script's result and reruns it only when the script
+or the allowed hosts change, or after about seven days. Every cloud session therefore starts from
+the cached tag and `global-sync` moves it forward, about a second or two per session, and the
+first turn holds both the old and the new text (~1,000 extra tokens) until the cache refreshes.
+Bumping the tag in the setup script after a release refreshes the cache; it is optional.
+
+## 7. Setup
+
+**Local, once per machine (PC, then Mac):**
+
+```bash
+cd ~/.claude
+mkdir -p rules
+[ -f CLAUDE.md ] && mv CLAUDE.md rules/local.md     # keep personal lines as an untracked rule
+git init -q
+git remote add origin https://github.com/enjay27/claude-global
+git sparse-checkout set --no-cone /CLAUDE.md /rules/ /hooks/ /settings.global.json /.gitignore /.gitattributes
+git fetch --depth 1 origin tag v<latest>
+git checkout -q --detach v<latest>
+node hooks/global-sync.cjs --install      # registers itself and context-guard in settings.json
+```
+
+On Windows, from Git Bash. `git init` in a folder that already has files is safe here: nothing
+is tracked until the checkout, and the allowlist keeps everything else untracked.
+
+**Cloud, in the environment's setup script** (`setup/cloud-setup.sh`):
+
+```bash
+tag=v2026.10.09     # floor for new sessions; global-sync moves past it
+c="$HOME/.claude"
+mkdir -p "$c" && cd "$c" || exit 0
+[ -d .git ] || git init -q
+git remote get-url origin >/dev/null 2>&1 \
+  || git remote add origin https://github.com/enjay27/claude-global
+# The token stays in the environment; git reads it on each use, never stores it.
+git config credential.helper \
+  '!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
+git sparse-checkout set --no-cone /CLAUDE.md /rules/ /hooks/ /settings.global.json /.gitignore /.gitattributes
+if git fetch -q --depth 1 origin tag "$tag" && git checkout -q --detach "$tag"; then
+  node hooks/global-sync.cjs --install
+else
+  echo "GLOBAL RULES FAILED TO LOAD ($tag). Tell Kade before doing anything else." > CLAUDE.md
+fi
+exit 0
+```
+
+- `GH_TOKEN` is a fine-grained token: read-only, `enjay27/claude-global` only, with an expiry.
+  The setup script runs before the session connects to the GitHub proxy, so the access granted
+  to the Claude app is not expected to cover this fetch. Every session in the environment can
+  read the token, so it must grant nothing else.
+- The script fails soft: with `set -e`, a GitHub outage would stop every session in the
+  environment from starting. The fallback file makes the failure the first thing the session
+  says.
+- The cloud `~/.claude` is not empty: the platform keeps `skills/`, `plugins/`, `projects/`,
+  policy files and its own hook scripts there (seen in a cloud session on 2026-10-09). The
+  sparse, allowlisted checkout leaves all of them untracked and untouched.
+
+## 8. Steps
+
+0. **Create `claude-global`** (Kade creates the empty private repository). Move `hooks/`,
+   `docs/global-rules-plan.md` and `docs/refactor-plan.md` from here, with a commit that names
+   the source commit. Split the README. `claude-skills` keeps `skills/`, `scripts/` and the skill
+   docs.
+1. **Prove the cloud** in a throwaway environment, before anything else depends on it:
+   - the setup script above, with a test `CLAUDE.md`: `/context` lists `/root/.claude/CLAUDE.md`;
+   - the platform's files in `~/.claude` are untouched, and `git status` there is clean;
+   - a user-level `settings.json` written by the script is honoured: a test `SessionStart` hook
+     in it runs;
+   - `GH_TOKEN` is visible to a hook, so `global-sync` can fetch;
+   - `github.com` is allowed in the network settings.
+
+   If user-level hooks do not run in the cloud, the fallback is one line in each repository's
+   `.claude/settings.json` that runs `node "$HOME/.claude/hooks/global-sync.cjs"`: a copy per
+   repository, but one that never changes.
+2. **Write `global-sync.cjs` test-first**, in the style of `context-guard.test.cjs`: same tag, new
+   tag, fetch failure, token missing, settings merge keeps foreign keys, settings merge is
+   idempotent, `--install` on an empty and on an existing `settings.json`. Plus the allowlist test
+   and the stamp test.
+3. **Draft the global `CLAUDE.md`**: the few rules that must always apply (coding conventions;
+   the order plan, test, gate, commit; where state is recorded; the Windows shell traps), and a
+   note on what each line replaced. List the candidates from repository `CLAUDE.md` files and
+   `kade-workflow` first and let Kade confirm each. Under 60 lines.
+4. **First release** with `scripts/release.sh`; set up the PC, then the Mac (section 7).
+5. **Move context-guard to user level.** Change its paths from `$CLAUDE_PROJECT_DIR/.claude/hooks`
+   to `$HOME/.claude/hooks`, then remove the vendored copy and its settings entry from each
+   repository in the same PR, so it never fires twice. One PR per repository.
+6. **Cut the duplicates** from repository `CLAUDE.md` files and `kade-workflow` once the global
+   text is verified in a live cloud session, and add the "Overrides of global rules" section where
+   needed. One PR per repository.
+
+## 9. Open questions
 
 | Question | How to check | Status |
 |---|---|---|
-| Can the setup script clone this private repository? | Step 1 | Docs: the GitHub proxy is connected only after the script; use `GH_TOKEN` |
-| Does the cloud environment allow `github.com` in its network settings? | Step 1 | Open |
-| Is `~/.claude/CLAUDE.md` read in a cloud session started after the script? | `/context` in step 1 | Docs: yes, an example in the cloud environment docs does exactly this |
-| Are user-level `settings.json` hooks and `~/.claude/skills/` honoured in the cloud? | Step 4 | Open |
-| What happens when an imported file (step 3) is missing? | Rename the target and ask for the version stamp | Open; the docs do not say |
-| Do `paths:` rules work at user level? | One test rule in `global/rules/` | Open |
-| Does a repository file load the same way on Windows when `CLAUDE_PROJECT_DIR` is unset? | The context-guard live check in `stella-rain/app#5` | Open |
+| Can the setup script fetch the private repository? | Step 1 | Docs: the GitHub proxy connects only after the script; use `GH_TOKEN` |
+| Does the cloud environment allow `github.com`? | Step 1 | Open |
+| Is `~/.claude/CLAUDE.md` read in a cloud session started after the script? | `/context`, step 1 | Docs: yes |
+| Do user-level `settings.json` hooks run in the cloud, next to the platform's own hooks? | Step 1 | Open; fallback in step 1 |
+| Is `GH_TOKEN` visible to a hook process? | Step 1 | Open |
+| Is a `CLAUDE.md` changed by a `SessionStart` hook reloaded in that session? | Change it in a test hook, ask for the stamp | Open; decides whether step 3 of section 6 prints |
+| Do `paths:` rules work at user level? | One test rule in `rules/` | Open; the docs show `paths:` for project rules only |
+| How do `$HOME` hook commands run on Windows? | context-guard live check in `stella-rain/app#5`, then the PC in step 4 | Open |
 
-## 7. How it is tested
+## 10. How it is tested
 
 Same bar as the skills: write the checks first. Each check asks the session to quote the version
-stamp, `Global rules: v<tag>`, so the answer is exact and also shows a stale cache.
+stamp, `Global rules: v<tag>`, so the answer is exact and also shows a stale checkout.
 
-- A fresh cloud session on `app` quotes the stamp of the current tag (fails today).
+- A fresh cloud session on `app` quotes the stamp of the latest tag (fails today).
 - A fresh local session on the PC and one on the Mac do the same.
-- A deliberately broken clone (wrong tag) starts the session and makes it report the
-  "GLOBAL RULES FAILED TO LOAD" line first.
-- A local session with the import target renamed shows what a missing import does (section 6).
-- After step 6, the same session still works with the duplicates removed.
+- After a new tag is pushed, the next session on each machine quotes the new stamp without any
+  manual step.
+- A broken setup (wrong tag) starts the session and makes it report "GLOBAL RULES FAILED TO LOAD"
+  first. A missing token makes `global-sync` report "could not check for updates".
+- `git status` in `~/.claude` is clean after a week of normal use on each machine (the allowlist
+  holds, nothing Claude Code writes is tracked).
+- After step 6, the same sessions still work with the duplicates removed.
 
-## 8. Risks
+## 11. Risks
 
-- **One bad edit reaches every repository.** Mitigation: protect `main` here, require a PR, pin by
-  tag.
-- **Always-on text costs context every turn.** Mitigation: the 60-line target and a review of each
-  line against "would a missed rule cost a failed command or a wrong PR".
-- **The cloud clone becomes a hidden dependency.** Mitigation: the fail-soft fallback in step 1 and
-  the open-questions table above.
+- **One tag reaches every session.** Mitigation: `main` needs a PR, only Kade can create `v*`
+  tags, `release.sh` runs the tests, and each release is tried in one session first.
+- **A bad `global-sync.cjs` cannot repair itself.** Mitigation: small file, most tests, the manual
+  recovery in section 6, and the setup script's tag as a floor in the cloud.
+- **Private files from `~/.claude` pushed to GitHub.** Mitigation: the allowlist, the test on it,
+  and `~/.claude` is never a working copy: commits happen only in the development clone.
+- **Always-on text costs attention.** Mitigation: the 60-line cap and a review of each line
+  against "would a missed rule cost a failed command or a wrong PR".
 - **The token is readable in every session of the environment.** Mitigation: fine-grained,
-  read-only, this repository only, with an expiry; a calendar note to renew it before it lapses,
-  since an expired token shows up as the fallback line, not as an error.
-- **A stale cache serves old rules.** Mitigation: the tag pin (a bump reruns the script) and the
-  version stamp, which makes the loaded version visible.
+  read-only, one repository, with an expiry; a calendar note to renew it, since an expired token
+  shows up only as the "could not check for updates" line.
 
-## 9. Sources (Claude Code docs, read 2026-10-09)
+## 12. Sources (Claude Code docs, read 2026-10-09)
 
 | Fact used above | Page |
 |---|---|
 | Plugins cannot ship `CLAUDE.md`; a plugin `SessionStart` hook can add text to context and refires on `compact` | `code.claude.com/docs/en/plugins/components`, `/hooks` |
+| A `SessionStart` hook's plain-text stdout is added to Claude's context | `/hooks` |
 | Cloud sessions do not install plugins a repository enables, nor its extra marketplaces | `/cloud-environments` ("What carries over"), `/plugins/loading` |
 | Setup script runs before Claude Code launches; writing `~/.claude/CLAUDE.md` there loads it; check with `/context` | `/cloud-environments` ("Setup scripts") |
 | Setup script is cached; reruns when the script or allowed hosts change, or after about seven days; must exit 0 | `/cloud-environments` |
