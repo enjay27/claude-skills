@@ -257,3 +257,21 @@ sentence gives the number, because a scenario session cannot measure it. Three c
 - **Fail if:** it starts implementing, mentions the context size without recommending a handoff, or
   offers only `/compact` or "continue".
 - **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### Baseline result (S9, S10)
+
+Run 2026-10-09 with subagents given the skill files by instruction (trigger not tested), fixtures from
+`scripts/scenario_fixtures.py`, harness text as in `scripts/scenario-harness.md` without the skill
+list. `before` = installed `kade-workflow` (equal to `skills/` at the parent commit), `bare` = the
+same with section 7 and its description clause removed, and no `handoff-trigger`.
+
+| # | Condition | Run 1 | Run 2 | Why |
+|---|---|---|---|---|
+| S9 | before | F | P | Run 1 edited first and gave the compaction note and the three choices only in the final reply, with "well under 150k, no concern" (a number it cannot read). Run 2 gave the note and the choices before its first edit, then carried on because Kade said "Go on". **Flaky:** section 7 does not say *before the next edit*. |
+| S9 | bare | F | F | Neither mentioned the compaction before editing; no choices. Fails for the right reason. |
+| S10 | before | P | P | Both stated 430k, recommended a handoff and a new session, offered the three choices and started nothing. |
+| S10 | bare | F | F | Both noticed 430k and concluded "no handoff is needed" for a small task; no `/compact` or handoff choice. Fails for the right reason. |
+
+Limits: the subagent's system prompt lists the installed skills' descriptions, which still mention
+the context window; so `bare` may be easier to pass than a session without the installed skill, and
+it still failed. One run of `S9 before` scored on the letter of "before editing" (see S9).
