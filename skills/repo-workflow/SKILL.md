@@ -1,5 +1,5 @@
 ---
-name: kade-workflow
+name: repo-workflow
 description: Kade's standing way of working in every one of his repositories (Stella Rain, resonance-stream, lakehouse-k8s and others). Use at the start of any task that edits code, config, CI or docs in a repository - plan first, test first, run the gates, commit and PR style, and recording state.
 ---
 

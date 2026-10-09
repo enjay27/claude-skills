@@ -6,7 +6,7 @@ description: Start a session in one of Kade's repositories by reconstructing whe
 # Session resume
 
 Goal: in one short reply, Kade sees where things stand and what you propose to do next.
-Do not edit anything until he confirms (kade-workflow, plan first).
+Do not edit anything until he confirms (repo-workflow, plan first).
 
 ## 1. Read the state
 

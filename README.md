@@ -6,9 +6,9 @@ repository (global rules, the `context-guard` hook, the setup plans) lives in
 
 | Path | What | How it is used |
 |---|---|---|
-| `skills/kade-workflow/` | The procedures behind the global rules for any of Kade's repositories: plan, gates, commit and PR style, state | Saved as a claude.ai account skill |
+| `skills/repo-workflow/` | The procedures behind the global rules for any of Kade's repositories: plan, gates, commit and PR style, state | Saved as a claude.ai account skill |
 | `skills/handoff-trigger/` | When to recommend a handoff and a new session, from the context size (a `context-guard` message, a compaction, a task boundary) | Account skill |
-| `skills/graft-kade/` | Orient in a repository with Graft's code graph (callers, blast radius) instead of exploring file by file; no install, no telemetry, no Trail, no Graft hooks or MCP server | Account skill |
+| `skills/code-graph/` | Orient in a repository with Graft's code graph (callers, blast radius) instead of exploring file by file; no install, no telemetry, no Trail, no Graft hooks or MCP server | Account skill |
 | `skills/session-resume/` | Start a session from the recorded state | Account skill |
 | `skills/session-handoff/` | Close a session: park the task, record state, print a starter prompt | Account skill |
 | `scripts/` | Scenario harness and fixtures for testing the skills | Run by the session changing a skill |
@@ -17,6 +17,9 @@ repository (global rules, the `context-guard` hook, the setup plans) lives in
 Account skills apply in Claude Code (terminal and cloud) and Cowork sessions. Each repository's
 `CLAUDE.md` keeps its own gates, paths and branch rules and names what it overrides of the global
 rules; the skills never hold repository-specific facts.
+
+`repo-workflow` and `code-graph` were `kade-workflow` and `graft-kade` until 2026-10-09; older
+docs under `docs/` keep the old names.
 
 ## Changing a skill
 
