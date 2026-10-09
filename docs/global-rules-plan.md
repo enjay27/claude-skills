@@ -7,7 +7,7 @@
   `~/.claude`. Nothing is changed yet; every step waits for Kade's yes.
 - **Related:** `docs/refactor-plan.md` (the current setup), `docs/skills-improvement-plan.md`
   (what the account skills should say).
-- **Decisions wanted:** the split into two repositories (section 4); tag protection and the
+- **Decisions wanted:** the split into two public repositories (section 4); tag protection and the
   auto-update rule (section 6); whether `settings.json` stays untracked (section 5).
 - **Home:** this file moves to `claude-global` in step 0.
 
@@ -42,7 +42,7 @@ of a skill equals the file in this repository.
 | Cloud and local identical | Partly | Yes, same tag on PC, Mac and cloud | No | Yes |
 | Update path | Upload skills by hand; edit hook copies | Push a tag; every session moves to it at its next start (section 6) | Bump the plugin version | Merge one PR per repository |
 | Context cost | ~270 tokens of skill descriptions always; skill bodies when used | A + ~1,000 tokens for a 60-line `CLAUDE.md`, offset by what moves out of `kade-workflow` and repository files | Same as A | Same as B |
-| New moving parts | None | A read-only token in the cloud environment; the sync hook; tag protection | Marketplace entry in each repository's `settings.json` | A sync workflow and a token that can open PRs |
+| New moving parts | None | The sync hook; tag protection; `github.com` in the cloud network allowlist | Marketplace entry in each repository's `settings.json` | A sync workflow and a token that can open PRs |
 | Failure mode | Silent drift | Fetch fails: the session keeps the tag it has and says so; a bad tag reaches every session | Plugin not installed in a session | PR left unmerged, so a repository lags |
 | Review of a change | Per repository | One place, one release (the tag) | Same as B | Per repository |
 
@@ -56,10 +56,10 @@ Rejected:
 - A git submodule, or a nested clone in each repository's `.claude/`: the outer repository cannot
   track files inside a nested repository, so repository-specific rules lose their home, and cloud
   checkouts do not bring the nested clone along.
-- The global text pasted into the cloud setup script: no token needed, but the text then lives in
+- The global text pasted into the cloud setup script: no fetch at all, but the text then lives in
   the app's settings, where it cannot be diffed or reviewed.
 - A `SessionStart` hook committed to each repository that fetches the text: one copy per
-  repository (the problem of D), and it still needs the token. Kept only as the fallback in
+  repository (the problem of D). Kept only as the fallback in
   section 8 if user-level hooks do not run in the cloud.
 - Managed policy `CLAUDE.md` or server-managed settings: the only documented route that reaches
   cloud sessions with plugins, but it is for organisations, not one person's account.
@@ -82,6 +82,18 @@ wins"; both files are simply in context, so an unstated conflict is a guess.
 
 Skills stay out of `~/.claude/skills/`: they reach every surface as account skills, and a second
 copy of the same name would clash.
+
+**Both repositories are public.** Neither holds private data (the history of `claude-skills` was
+scanned on 2026-10-09: no keys, tokens, emails or hostnames; it does name Kade's other
+repositories and one issue, so publishing it reveals those names, nothing inside them). A public `claude-global` needs no login to fetch, so the
+cloud setup and `global-sync` carry no token at all. Public means anyone can read it, not change
+it: who can change the rules is still decided by tag protection and the PR rule on `main`
+(section 6). Two consequences:
+
+- A secret committed by mistake is public at once. GitHub secret scanning with push protection is
+  on, on top of the allowlist and its test (section 5).
+- The global `CLAUDE.md` is written for strangers to read: no hostnames, account IDs or facts
+  about private repositories. Those belong in the repository they concern.
 
 ## 5. The `claude-global` repository
 
@@ -153,7 +165,7 @@ fails a session: every path exits 0.
    Claude Code adds a `SessionStart` hook's stdout to the context, so the session already runs on
    the new rules. (*Unverified:* whether a `CLAUDE.md` changed by the hook is reloaded anyway; if
    it is, the print is dropped.)
-4. If the network or the token fails: print `Global rules: could not check for updates; using
+4. If the network fails: print `Global rules: could not check for updates; using
    v<current>.` and stop.
 
 **A tag is a release.** Pushing `v2026.10.12` reaches every session at its next start, on every
@@ -201,9 +213,6 @@ mkdir -p "$c" && cd "$c" || exit 0
 [ -d .git ] || git init -q
 git remote get-url origin >/dev/null 2>&1 \
   || git remote add origin https://github.com/enjay27/claude-global
-# The token stays in the environment; git reads it on each use, never stores it.
-git config credential.helper \
-  '!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
 git sparse-checkout set --no-cone /CLAUDE.md /rules/ /hooks/ /settings.global.json /.gitignore /.gitattributes
 if git fetch -q --depth 1 origin tag "$tag" && git checkout -q --detach "$tag"; then
   node hooks/global-sync.cjs --install
@@ -213,10 +222,10 @@ fi
 exit 0
 ```
 
-- `GH_TOKEN` is a fine-grained token: read-only, `enjay27/claude-global` only, with an expiry.
-  The setup script runs before the session connects to the GitHub proxy, so the access granted
-  to the Claude app is not expected to cover this fetch. Every session in the environment can
-  read the token, so it must grant nothing else.
+- No token: the repository is public, so the fetch is anonymous. (The setup script runs before
+  the session connects to the GitHub proxy, so a private repository would have needed a token
+  stored in the environment, readable by every session.) The environment must allow
+  `github.com` in its network settings.
 - The script fails soft: with `set -e`, a GitHub outage would stop every session in the
   environment from starting. The fallback file makes the failure the first thing the session
   says.
@@ -226,7 +235,7 @@ exit 0
 
 ## 8. Steps
 
-0. **Create `claude-global`** (Kade creates the empty private repository). Move `hooks/`,
+0. **Create `claude-global`** (Kade creates the empty public repository, then turns on secret scanning with push protection and the tag ruleset). Move `hooks/`,
    `docs/global-rules-plan.md` and `docs/refactor-plan.md` from here, with a commit that names
    the source commit. Split the README. `claude-skills` keeps `skills/`, `scripts/` and the skill
    docs.
@@ -235,14 +244,14 @@ exit 0
    - the platform's files in `~/.claude` are untouched, and `git status` there is clean;
    - a user-level `settings.json` written by the script is honoured: a test `SessionStart` hook
      in it runs;
-   - `GH_TOKEN` is visible to a hook, so `global-sync` can fetch;
+   - a hook can reach `github.com`, so `global-sync` can fetch;
    - `github.com` is allowed in the network settings.
 
    If user-level hooks do not run in the cloud, the fallback is one line in each repository's
    `.claude/settings.json` that runs `node "$HOME/.claude/hooks/global-sync.cjs"`: a copy per
    repository, but one that never changes.
 2. **Write `global-sync.cjs` test-first**, in the style of `context-guard.test.cjs`: same tag, new
-   tag, fetch failure, token missing, settings merge keeps foreign keys, settings merge is
+   tag, fetch failure, settings merge keeps foreign keys, settings merge is
    idempotent, `--install` on an empty and on an existing `settings.json`. Plus the allowlist test
    and the stamp test.
 3. **Draft the global `CLAUDE.md`**: the few rules that must always apply (coding conventions;
@@ -261,11 +270,11 @@ exit 0
 
 | Question | How to check | Status |
 |---|---|---|
-| Can the setup script fetch the private repository? | Step 1 | Docs: the GitHub proxy connects only after the script; use `GH_TOKEN` |
+| Can the setup script fetch the repository? | Step 1 | Public, so an anonymous fetch; only the network allowlist can block it |
 | Does the cloud environment allow `github.com`? | Step 1 | Open |
 | Is `~/.claude/CLAUDE.md` read in a cloud session started after the script? | `/context`, step 1 | Docs: yes |
 | Do user-level `settings.json` hooks run in the cloud, next to the platform's own hooks? | Step 1 | Open; fallback in step 1 |
-| Is `GH_TOKEN` visible to a hook process? | Step 1 | Open |
+| Can a hook reach `github.com` in the cloud? | Step 1 | Open |
 | Is a `CLAUDE.md` changed by a `SessionStart` hook reloaded in that session? | Change it in a test hook, ask for the stamp | Open; decides whether step 3 of section 6 prints |
 | Do `paths:` rules work at user level? | One test rule in `rules/` | Open; the docs show `paths:` for project rules only |
 | How do `$HOME` hook commands run on Windows? | context-guard live check in `stella-rain/app#5`, then the PC in step 4 | Open |
@@ -280,7 +289,7 @@ stamp, `Global rules: v<tag>`, so the answer is exact and also shows a stale che
 - After a new tag is pushed, the next session on each machine quotes the new stamp without any
   manual step.
 - A broken setup (wrong tag) starts the session and makes it report "GLOBAL RULES FAILED TO LOAD"
-  first. A missing token makes `global-sync` report "could not check for updates".
+  first. With `github.com` unreachable, `global-sync` reports "could not check for updates".
 - `git status` in `~/.claude` is clean after a week of normal use on each machine (the allowlist
   holds, nothing Claude Code writes is tracked).
 - After step 6, the same sessions still work with the duplicates removed.
@@ -291,13 +300,11 @@ stamp, `Global rules: v<tag>`, so the answer is exact and also shows a stale che
   tags, `release.sh` runs the tests, and each release is tried in one session first.
 - **A bad `global-sync.cjs` cannot repair itself.** Mitigation: small file, most tests, the manual
   recovery in section 6, and the setup script's tag as a floor in the cloud.
-- **Private files from `~/.claude` pushed to GitHub.** Mitigation: the allowlist, the test on it,
-  and `~/.claude` is never a working copy: commits happen only in the development clone.
+- **Private files from `~/.claude` pushed to a public repository.** Mitigation: the allowlist, the
+  test on it, secret scanning with push protection, and `~/.claude` is never a working copy:
+  commits happen only in the development clone.
 - **Always-on text costs attention.** Mitigation: the 60-line cap and a review of each line
   against "would a missed rule cost a failed command or a wrong PR".
-- **The token is readable in every session of the environment.** Mitigation: fine-grained,
-  read-only, one repository, with an expiry; a calendar note to renew it, since an expired token
-  shows up only as the "could not check for updates" line.
 
 ## 12. Sources (Claude Code docs, read 2026-10-09)
 
@@ -308,5 +315,5 @@ stamp, `Global rules: v<tag>`, so the answer is exact and also shows a stale che
 | Cloud sessions do not install plugins a repository enables, nor its extra marketplaces | `/cloud-environments` ("What carries over"), `/plugins/loading` |
 | Setup script runs before Claude Code launches; writing `~/.claude/CLAUDE.md` there loads it; check with `/context` | `/cloud-environments` ("Setup scripts") |
 | Setup script is cached; reruns when the script or allowed hosts change, or after about seven days; must exit 0 | `/cloud-environments` |
-| The agent proxy connects after the setup script; `GH_TOKEN` or `GITHUB_TOKEN` as an environment variable for a private clone | `/cloud-environments` |
+| The agent proxy connects after the setup script (why a private repository would need a stored token) | `/cloud-environments` |
 | `~/.claude/rules/*.md` exists and loads before project rules; `@~/…` imports are allowed | `/memory` |
