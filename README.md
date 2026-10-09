@@ -6,7 +6,7 @@ repository (global rules, the `context-guard` hook, the setup plans) lives in
 
 | Path | What | How it is used |
 |---|---|---|
-| `skills/kade-workflow/` | How to work in any of Kade's repositories: plan, test, gates, commit and PR style, state, context budget | Saved as a claude.ai account skill |
+| `skills/kade-workflow/` | The procedures behind the global rules for any of Kade's repositories: plan, gates, commit and PR style, state | Saved as a claude.ai account skill |
 | `skills/handoff-trigger/` | When to recommend a handoff and a new session, from the context size (a `context-guard` message, a compaction, a task boundary) | Account skill |
 | `skills/session-resume/` | Start a session from the recorded state | Account skill |
 | `skills/session-handoff/` | Close a session: park the task, record state, print a starter prompt | Account skill |
@@ -14,8 +14,8 @@ repository (global rules, the `context-guard` hook, the setup plans) lives in
 | `docs/skill-*.md`, `docs/skills-improvement-plan.md` | Scenarios, their results, and the improvement plan | Read by the session changing a skill |
 
 Account skills apply in Claude Code (terminal and cloud) and Cowork sessions. Each repository's
-`CLAUDE.md` keeps one line, *"Follow the `kade-workflow` skill"*, and its own gates, paths and
-branch rules; the skills never hold repository-specific facts.
+`CLAUDE.md` keeps its own gates, paths and branch rules and names what it overrides of the global
+rules; the skills never hold repository-specific facts.
 
 ## Changing a skill
 
