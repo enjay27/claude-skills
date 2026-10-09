@@ -6,6 +6,7 @@ Each fixture is built fresh at OUT_DIR/<condition>/<scenario>-<run>/ (S6, S7 and
 repository in a `work` subfolder next to a bare `work-origin.git`). OUT_DIR is deleted first.
 Standard library only. Git must be on PATH.
 """
+import json
 import os
 import shutil
 import stat
@@ -250,8 +251,46 @@ def s10(d):
     commit_all(d, "Notes: report CLI done")
 
 
+def graft_settings(helper):
+    """A settings.json holding the five hooks `graft init` installs, as on Kade's machines."""
+    cmd = lambda mode: {"type": "command", "command": f'node "{helper}" {mode}'}
+    return ('{\n  "hooks": {\n'
+            f'    "PostToolUse": [{{"matcher": "Write|Edit|MultiEdit", "hooks": [{json.dumps(cmd("post-edit"))}]}},\n'
+            f'                    {{"matcher": "Bash|mcp__graft__|Read|Grep|Glob", "hooks": [{json.dumps(cmd("tool-savings"))}]}}],\n'
+            f'    "UserPromptSubmit": [{{"hooks": [{json.dumps(cmd("prompt"))}]}}],\n'
+            f'    "SessionStart": [{{"hooks": [{json.dumps(cmd("session-start"))}]}}],\n'
+            f'    "Stop": [{{"hooks": [{json.dumps(cmd("stop"))}]}}]\n'
+            '  }\n}\n')
+
+
+def s11(d):
+    """No graft wiring in the repo; graft's hooks are still in the user-level settings (HOME=home/)."""
+    s1(d + "/repo")
+    home = d + "/home/.claude"
+    w(home + "/settings.json", graft_settings("$HOME/.claude/helpers/graft-hooks.cjs"))
+    w(home + "/helpers/graft-hooks.cjs", "// graft's hook runner (stub for the test)\n")
+    w(d + "/home/.claude.json", '{\n  "mcpServers": {"graft": {"command": "graft", "args": ["mcp"]}}\n}\n')
+
+
+def s12(d):
+    """The repo still carries `graft init` wiring and a stale graft/ graph."""
+    s1(d)
+    w(d + "/.claude/skills/graft/SKILL.md",
+      "---\nname: graft\ndescription: This repo is indexed by graft/. For ANY task here, get your\n"
+      "  context from graft before grepping or reading source files.\n---\n\n# graft\n\n"
+      "Run `graft ask \"<question>\" --source` first. Close every reply with the tally line, e.g.\n"
+      "`🌱 graft saved ~12,400 tokens (~$0.04) this turn (3 calls)`.\n")
+    w(d + "/.claude/helpers/graft-hooks.cjs", "// graft's hook runner (stub for the test)\n")
+    w(d + "/.claude/settings.json", graft_settings("${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-hooks.cjs"))
+    w(d + "/.gitignore", "/graft/\n")
+    commit_all(d, "graft init")
+    w(d + "/.mcp.json", '{\n  "mcpServers": {"graft": {"command": "graft", "args": ["mcp"]}}\n}\n')
+    w(d + "/.ignore", "graft/\n")
+    w(d + "/graft/index.md", "# graft graph (built 2026-09-29)\n")
+
+
 BUILD = {"S1": s1, "S2": s2, "S3": s3, "S3b": s3b, "S4": s4, "S5": s5, "S5b": s5b,
-         "S6": s6, "S7": s7, "S7b": s7b, "S8": s8, "S9": s9, "S10": s10}
+         "S6": s6, "S7": s7, "S7b": s7b, "S8": s8, "S9": s9, "S10": s10, "S11": s11, "S12": s12}
 IN_WORK = {"S6", "S7", "S7b"}
 
 
