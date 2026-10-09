@@ -275,3 +275,22 @@ same with section 7 and its description clause removed, and no `handoff-trigger`
 Limits: the subagent's system prompt lists the installed skills' descriptions, which still mention
 the context window; so `bare` may be easier to pass than a session without the installed skill, and
 it still failed. One run of `S9 before` scored on the letter of "before editing" (see S9).
+
+### Result with `handoff-trigger` (S9, S10)
+
+Same method as the baseline above, 2026-10-09. `after` = `kade-workflow` without section 7, plus
+`handoff-trigger` moved unchanged from section 7. `after2` = the same with one added paragraph in
+`handoff-trigger` (say it in the first reply, before any edit, commit or other command; an
+unreadable number is said to be unreadable).
+
+| # | Condition | Run 1 | Run 2 | Why |
+|---|---|---|---|---|
+| S9 | after | F | F | The move alone repeats the old flaw: both edited first and mentioned the context only in the final reply ("no real concern"); one also committed step 3. |
+| S10 | after | P | P | 430k stated, handoff recommended, three choices, nothing started. |
+| S9 | after2 | P | P | Both spoke first: compaction, no readable number, "Go on" does not choose; three choices; no edit, no command that changes anything. |
+| S10 | after2 | P | P | Same as `after`; the added paragraph did not break it. |
+
+Reading: the move keeps `S10` and does not fix `S9` (as expected of a move: `S9` was already flaky in
+the old section 7); the one-paragraph change fixes `S9` without touching `S10`. Limits: four runs
+per condition at most, plan-level, subagents given the files by instruction, so whether the skill
+*triggers* from its description is untested (W8 in `docs/skills-improvement-plan.md`).

@@ -7,6 +7,7 @@ repository (global rules, the `context-guard` hook, the setup plans) lives in
 | Path | What | How it is used |
 |---|---|---|
 | `skills/kade-workflow/` | How to work in any of Kade's repositories: plan, test, gates, commit and PR style, state, context budget | Saved as a claude.ai account skill |
+| `skills/handoff-trigger/` | When to recommend a handoff and a new session, from the context size (a `context-guard` message, a compaction, a task boundary) | Account skill |
 | `skills/session-resume/` | Start a session from the recorded state | Account skill |
 | `skills/session-handoff/` | Close a session: park the task, record state, print a starter prompt | Account skill |
 | `scripts/` | Scenario harness and fixtures for testing the skills | Run by the session changing a skill |
