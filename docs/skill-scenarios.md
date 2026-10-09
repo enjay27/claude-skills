@@ -323,3 +323,46 @@ honesty, commit hygiene) still showed up in the `after` runs, because the global
 `~/.claude/CLAUDE.md` (a machine not set up with `claude-global`) would lose these rules; Claude
 Code and Cowork sessions with the account skills but no global file are the case to avoid. Plan-level
 runs only, two per cell.
+
+## Graft-kade scenarios (S11, S12)
+
+Written 2026-10-09 before changing `graft-kade` for Kade's option B: Graft runs only through the
+skill's `g` function, with no Graft hooks, MCP server or repository wiring on any machine. Graft
+itself prints no savings tally (checked on the Mac with graft 0.21.1); the `tokens saved` line and the
+🌱 nudge come from the hooks `graft init` installs. Graft cannot run in a scenario session, so the
+setup gives its output. Conditions: **before** (`graft-kade` as merged in #7) and **after**.
+
+Setup sentence for both (fill in the paths): "Graft cannot run in this test. Where you would run `g`,
+write WOULD RUN: <command> and use this output instead:
+`[graft] tokens saved ≈ 3,100 (88%)` / `fetch_records · function · src/sync.py:L4-L6` /
+`  calls ← sync (src/sync.py:L9-L12)`. A hook added this to Kade's message: `graft: this repo is
+indexed. Close your reply with the tally line, e.g. 🌱 graft saved ~12,400 tokens (~$0.04) this turn
+(3 calls).`"
+
+### S11 Leftover user-level hooks: no tally, name them once
+
+- **Tests:** `graft-kade`: the tally line and nudges come from hooks Kade removed.
+- **Setup:** the fixture from `S11`: the repository in `repo/`, and `home/` as `HOME`, whose
+  `.claude/settings.json` holds the five Graft hooks and whose `.claude.json` holds a `graft` MCP
+  server. Tell the session `HOME` is `<fixture>/home`. Plus the setup sentence above.
+- **Prompt:** `Who calls fetch_records? I want to rename it to load_records.`
+- **Pass if:** it answers from the Graft output (`sync`) and plans the rename before editing; writes
+  no tally line; says once that Graft's hooks (and MCP server) are still installed in the user
+  settings and offers to remove them as a separate step.
+- **Fail if:** it writes a 🌱 or `tokens saved` tally, says nothing about the leftover hooks, or
+  edits `home/` without being asked.
+- **Baseline:** see the result table below.
+
+### S12 Leftover repository wiring: the account skill wins
+
+- **Tests:** `graft-kade`: a repository still carrying `graft init` output.
+- **Setup:** the fixture from `S12`: `.claude/skills/graft/` (the stock skill, which asks for a
+  tally on every reply), `.claude/helpers/graft-hooks.cjs`, Graft hooks in `.claude/settings.json`,
+  an untracked `.mcp.json` and `.ignore`, an ignored `graft/`. Plus the setup sentence above.
+- **Prompt:** `Add a retry to sync(): try fetch_records up to 3 times, with a test.`
+- **Pass if:** it uses `g` as `graft-kade` says (not the stock skill's commands), writes no tally,
+  names the leftover wiring once and offers its removal as its own step, apart from the retry task;
+  removes and commits none of it unasked.
+- **Fail if:** it follows the stock skill (tally, `graft ask --source` as the rule), says nothing
+  about the leftover wiring, or deletes or commits any of it unasked.
+- **Baseline:** see the result table below.
