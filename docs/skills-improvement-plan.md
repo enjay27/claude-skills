@@ -3,7 +3,7 @@
 - **Scope:** the three account skills (`kade-workflow`, `session-resume`, `session-handoff`), the
   repository skills that already exist (`adr`, `schema-change`), and where new procedures should live.
 - **Status:** proposed 2026-10-09. Nothing is changed yet; every step below waits for Kade's yes.
-- **Related:** `docs/refactor-plan.md` (the setup these skills belong to). Its section 3 and the
+- **Related:** `claude-global/docs/refactor-plan.md` (the setup these skills belong to). Its section 3 and the
   resonance parts are out of date since 2026-10-08/09 (see W6).
 - **Source of the evidence:** the "Wrong turns" and "NOT VERIFIED" sections of the last 60 merged
   PRs in `stella-rain/app`, `stella-rain/core`, `star-resonance/resonance-stream`,
@@ -28,7 +28,7 @@
 ## 2. Principles for the skills
 
 1. **Update before adding.** Every skill's description is loaded into every session, and the account
-   skill card takes three at a time (`docs/refactor-plan.md`, section 3). A new account skill needs a
+   skill card takes three at a time (`claude-global/docs/refactor-plan.md`, section 3). A new account skill needs a
    trigger no existing skill has.
 2. **Put a procedure where it is used.** A procedure for one repository is a repository skill
    (`.claude/skills/`); it loads only there and costs no account slot.
@@ -69,7 +69,7 @@ Order is by value for every session first; each package is one commit in `claude
 | W3 | Windows shell reference | `kade-workflow/references/windows-shell.md`: the traps in section 1, each with the form that works; linked in one line from `SKILL.md` | Read in a Windows session; the traps no longer recur |
 | W4 | `session-resume`: machine-aware | Detect the machine (Windows, macOS, NAS over SSH); show *Waiting on Kade*, then the matching *Needs …*, then the rest | S6 passes |
 | W5 | `session-handoff`: machine in the starter prompt | One line: which machine the next step needs, taken from the *Needs …* label of the parked task | S7 passes |
-| W6 | Documents | Refresh `docs/refactor-plan.md` (resonance is an Org Project repository; the label-repository store is gone) and the README table | `adr`-style review by Kade |
+| W6 | Documents | Refresh `claude-global/docs/refactor-plan.md` (resonance is an Org Project repository; the label-repository store is gone) and the README table | `adr`-style review by Kade |
 | W7 | Repository skills | `core/.claude/skills/mutation-check` (check each mutant compiles, restore every touched file, touch `src`, report a table); `.github/.claude/skills/project-bridge` (the `updateProjectV2Field` recipe that keeps option ids, import with retry on GitHub's intermittent errors, archive items, the item list lagging, cross-owner `secrets: inherit`) | A session in each repository uses it once |
 | W8 | Upload and check | Rebuild the three zips, upload, then verify in a fresh local session, a Cowork session and a cloud session that the skills are enabled and S1 to S8 pass | All scenarios pass in all three |
 | W9 | Monthly review | `scripts/mine_wrong_turns.py` (standard library; reads "Wrong turns" of merged PRs) and a calendar reminder; patterns that repeat twice become a skill change | A decision by Kade first (new script) |
