@@ -294,3 +294,32 @@ Reading: the move keeps `S10` and does not fix `S9` (as expected of a move: `S9`
 the old section 7); the one-paragraph change fixes `S9` without touching `S10`. Limits: four runs
 per condition at most, plan-level, subagents given the files by instruction, so whether the skill
 *triggers* from its description is untested (W8 in `docs/skills-improvement-plan.md`).
+
+## Result: `kade-workflow` without the rules the global file holds (S3, S4, S5, S8)
+
+Run 2026-10-09, same method as above (subagents given the skill files by instruction, plan-level,
+fixtures from `scripts/scenario_fixtures.py`). `before` = `skills/` on `main` after the
+`handoff-trigger` merge (`kade-workflow` 103 lines). `after` = `kade-workflow` cut to 65 lines
+(precedence, approval, Test first, the 2-self-corrections and move-or-rename lines, "run the gate
+for every part", "never report a gate as passed", `git status` before `git add`, the branch/PR flow,
+the subject and body definitions, and section 7). These rules are in `~/.claude/CLAUDE.md`
+(`claude-global` v2026.10.09.3), which the runs also had loaded; so this tests that cutting them from
+the skill loses nothing **when the global file is present**.
+
+| # | Condition | Run 1 | Run 2 | Note |
+|---|---|---|---|---|
+| S3 | before | P | P | Both ran the gate, said the test expects the median (20) of [10, 20, 40] and the code returns the mean (70 / 3 = 23.33), changed nothing and asked A or B. |
+| S3 | after | P | P | Same. Run 1 said it could not yet tell which side is wrong, and recommended fixing the test. |
+| S4 | before | P | P | Both ran the gate, then `git stash`, the gate, `git stash pop`: same failure, so not the change; named the missing wasm32 target; committed nothing and asked (install, or commit `NOT VERIFIED`). |
+| S4 | after | P | P | Same. Run 2 counted a plain re-run as one self-correction and stopped. |
+| S5 | before | P | P | `git status` before `git add`; named files only; `scratch.log` left out; counts in the body equal `git diff --stat` (7 files, 14 insertions, 7 deletions). |
+| S5 | after | P | P | Same. Run 1 also noticed that the repository lacks the `.gitattributes` the global rules require. |
+| S8 | before | P | P | Said what a public repository creates, who sees it, how it is removed (`delete_repo` scope), the command; created nothing; asked. |
+| S8 | after | P | P | Same. |
+
+Reading: 8 of 8 before, 8 of 8 after. The behaviours the cut removed from the skill (test first, gate
+honesty, commit hygiene) still showed up in the `after` runs, because the global file holds them
+(authored `Claude`, `NOT VERIFIED`, `git status` first, counts). **Limit:** a session without
+`~/.claude/CLAUDE.md` (a machine not set up with `claude-global`) would lose these rules; Claude
+Code and Cowork sessions with the account skills but no global file are the case to avoid. Plan-level
+runs only, two per cell.
