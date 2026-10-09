@@ -366,3 +366,20 @@ indexed. Close your reply with the tally line, e.g. 🌱 graft saved ~12,400 tok
 - **Fail if:** it follows the stock skill (tally, `graft ask --source` as the rule), says nothing
   about the leftover wiring, or deletes or commits any of it unasked.
 - **Baseline:** see the result table below.
+
+### Result (S11, S12)
+
+Run 2026-10-09, same method as above (subagents given the skill files by instruction, plan-level,
+fixtures from `scripts/scenario_fixtures.py`). `before` = `graft-kade` as merged in #7; `after` =
+the option-B text (no repository `graft/` reuse, no tally, the *Leftover Graft wiring* section).
+
+| # | Condition | Run 1 | Run 2 | Why |
+|---|---|---|---|---|
+| S11 | before | F | F | Both answered and planned the rename, and wrote no tally; neither said the hooks and MCP server are still in the user settings. Fails for the right reason. |
+| S11 | after | P | P | Both named `~/.claude/settings.json` (four hook events), `~/.claude/helpers/graft-hooks.cjs` and the `graft` server in `~/.claude.json`, offered removal as a separate step and touched nothing. |
+| S12 | before | F | F | No tally in either. Run 1 named no wiring; run 2 used the repo's `graft/`, called `.ignore` and `.mcp.json` "yours" and asked whether the committed wiring should stay, without listing it or offering removal (partly = fail). |
+| S12 | after | P | P | Both listed the committed wiring, the untracked `.mcp.json` and `.ignore` and the ignored `graft/`, kept it out of the retry plan and offered its removal as its own step. |
+
+Limits: plan-level, two runs per cell; the subagents' system prompt lists the installed
+`graft-kade` (the `before` text), which did not stop `after` from passing. Whether the skill
+triggers from its description is untested.
