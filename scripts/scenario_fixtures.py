@@ -42,7 +42,7 @@ def commit_all(d, msg):
 
 def claude_md(d, gate, extra=""):
     w(os.path.join(d, "CLAUDE.md"),
-      "# Project\n\nFollow the `kade-workflow` skill.\n\n"
+      "# Project\n\nFollow the `repo-workflow` skill.\n\n"
       f"- Gate: `{gate}`\n- Flow: commit locally on `main`; `git push` is Kade's.\n{extra}")
 
 

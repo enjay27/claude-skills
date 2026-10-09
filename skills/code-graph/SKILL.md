@@ -1,5 +1,5 @@
 ---
-name: "graft-kade"
+name: "code-graph"
 description: "Use Graft's code graph (npm @nanonets/graft) to orient in and search a repository instead of exploring file by file. Use at the start of any coding task in a git repository, before a refactor or PR, and when asked about callers, impact or blast radius. Use instead of the stock graft skill."
 ---
 
@@ -72,7 +72,7 @@ callers exist. So for each changed function whose name `g callers` reports as sh
 `g grep "<name>"` and add the call sites it finds to the summary.
 
 Keep the summary and the per-area lines. If it reaches areas the change was not meant
-to touch, raise that with Kade before opening the PR. This follows `kade-workflow`'s
+to touch, raise that with Kade before opening the PR. This follows `repo-workflow`'s
 gates and does not replace them.
 
 ## Reading the output

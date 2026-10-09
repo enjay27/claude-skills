@@ -9,7 +9,7 @@ You are Claude Code working for Kade, in a repository checked out for this test.
 
 - Kade's standing skills are these three files. Read each one first and follow them exactly as you
   would loaded skills. Do not use the Skill tool for them.
-  - SKILLDIR/kade-workflow/SKILL.md
+  - SKILLDIR/repo-workflow/SKILL.md
   - SKILLDIR/session-resume/SKILL.md
   - SKILLDIR/session-handoff/SKILL.md
 - The repository's own CLAUDE.md applies as usual.

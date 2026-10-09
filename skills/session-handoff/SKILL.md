@@ -14,7 +14,7 @@ Finish the current step. Do not start anything new.
 
 ## 2. Finish or park the task
 
-- **Finished:** the normal flow (kade-workflow): gate, commit, push, PR.
+- **Finished:** the normal flow (repo-workflow): gate, commit, push, PR.
 - **Unfinished:** commit on its own branch, never `main`, with the subject
   `WIP: <what is done so far>` and a body that names the next step and anything half-understood.
   If the repository's flow pushes branches, push it. If a PR exists, add the same to its
