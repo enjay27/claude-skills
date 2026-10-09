@@ -217,3 +217,80 @@ on the staged file or the counts, S7b likely fails (no rule names the machine wh
 
 Run 2026-10-09. Predictions were S3b pass, S5b maybe fail, S7b fail; only S3b was right. None of the
 three held rules is supported (see `docs/skill-scenario-report.md`, "Harder variants").
+
+## Handoff-trigger scenarios (S9, S10)
+
+Written 2026-10-09 before the `handoff-trigger` skill exists, for the move of `kade-workflow` section 7
+(context budget) into its own skill. They test the part that does **not** rely on the `context-guard`
+hook's own message: after a compaction and at a task boundary with a large context. The setup
+sentence gives the number, because a scenario session cannot measure it. Three conditions:
+**before** (installed `kade-workflow`, with section 7), **bare** (section 7 removed, no
+`handoff-trigger`; must fail, or the scenario proves nothing) and **after** (section 7 removed,
+`handoff-trigger` present).
+
+### S9 Compaction mid-task: say so, offer a handoff, do not hand off mid-edit
+
+- **Tests:** `handoff-trigger` (was `kade-workflow` section 7): the three choices after a compaction.
+- **Setup:** the repository from `S9`: a report CLI with `format_json` half written and uncommitted
+  (step 3 of 3). Tell the session: "The conversation was just auto-compacted; a summary replaced
+  the history. The summary says: task 'add --json output to the report CLI', steps 1 and 2 done,
+  step 3 (`format_json`) in progress. `context-guard` is not installed in this session."
+- **Prompt:** `Go on.`
+- **Pass if:** before editing it says in about one line that a compaction just happened, and offers
+  the three choices: a handoff and new session, `/compact` with a focus, or continue. It does not
+  write a handoff or starter prompt while `format_json` is half done (it says it will finish or
+  park the step first).
+- **Fail if:** it carries on editing without offering the choices, offers only "continue", or
+  produces a handoff / starter prompt immediately while the step is half edited.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S10 Finished task, large context: recommend the handoff
+
+- **Tests:** `handoff-trigger`: a task boundary with a large context.
+- **Setup:** the repository from `S10`: the report CLI task is finished and committed, tree clean.
+  Tell the session: "The status line shows 430k tokens used in a 1M window. `context-guard` is not
+  installed in this session."
+- **Prompt:** `Next: add a --verbose flag and a --sort option to the report CLI, with tests.`
+- **Pass if:** before editing it states the number (430k) and recommends a handoff and a new session
+  (the `session-handoff` skill), offers the three choices, and starts no new multi-step work until
+  Kade answers.
+- **Fail if:** it starts implementing, mentions the context size without recommending a handoff, or
+  offers only `/compact` or "continue".
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### Baseline result (S9, S10)
+
+Run 2026-10-09 with subagents given the skill files by instruction (trigger not tested), fixtures from
+`scripts/scenario_fixtures.py`, harness text as in `scripts/scenario-harness.md` without the skill
+list. `before` = installed `kade-workflow` (equal to `skills/` at the parent commit), `bare` = the
+same with section 7 and its description clause removed, and no `handoff-trigger`.
+
+| # | Condition | Run 1 | Run 2 | Why |
+|---|---|---|---|---|
+| S9 | before | F | P | Run 1 edited first and gave the compaction note and the three choices only in the final reply, with "well under 150k, no concern" (a number it cannot read). Run 2 gave the note and the choices before its first edit, then carried on because Kade said "Go on". **Flaky:** section 7 does not say *before the next edit*. |
+| S9 | bare | F | F | Neither mentioned the compaction before editing; no choices. Fails for the right reason. |
+| S10 | before | P | P | Both stated 430k, recommended a handoff and a new session, offered the three choices and started nothing. |
+| S10 | bare | F | F | Both noticed 430k and concluded "no handoff is needed" for a small task; no `/compact` or handoff choice. Fails for the right reason. |
+
+Limits: the subagent's system prompt lists the installed skills' descriptions, which still mention
+the context window; so `bare` may be easier to pass than a session without the installed skill, and
+it still failed. One run of `S9 before` scored on the letter of "before editing" (see S9).
+
+### Result with `handoff-trigger` (S9, S10)
+
+Same method as the baseline above, 2026-10-09. `after` = `kade-workflow` without section 7, plus
+`handoff-trigger` moved unchanged from section 7. `after2` = the same with one added paragraph in
+`handoff-trigger` (say it in the first reply, before any edit, commit or other command; an
+unreadable number is said to be unreadable).
+
+| # | Condition | Run 1 | Run 2 | Why |
+|---|---|---|---|---|
+| S9 | after | F | F | The move alone repeats the old flaw: both edited first and mentioned the context only in the final reply ("no real concern"); one also committed step 3. |
+| S10 | after | P | P | 430k stated, handoff recommended, three choices, nothing started. |
+| S9 | after2 | P | P | Both spoke first: compaction, no readable number, "Go on" does not choose; three choices; no edit, no command that changes anything. |
+| S10 | after2 | P | P | Same as `after`; the added paragraph did not break it. |
+
+Reading: the move keeps `S10` and does not fix `S9` (as expected of a move: `S9` was already flaky in
+the old section 7); the one-paragraph change fixes `S9` without touching `S10`. Limits: four runs
+per condition at most, plan-level, subagents given the files by instruction, so whether the skill
+*triggers* from its description is untested (W8 in `docs/skills-improvement-plan.md`).
