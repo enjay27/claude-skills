@@ -217,3 +217,43 @@ on the staged file or the counts, S7b likely fails (no rule names the machine wh
 
 Run 2026-10-09. Predictions were S3b pass, S5b maybe fail, S7b fail; only S3b was right. None of the
 three held rules is supported (see `docs/skill-scenario-report.md`, "Harder variants").
+
+## Handoff-trigger scenarios (S9, S10)
+
+Written 2026-10-09 before the `handoff-trigger` skill exists, for the move of `kade-workflow` section 7
+(context budget) into its own skill. They test the part that does **not** rely on the `context-guard`
+hook's own message: after a compaction and at a task boundary with a large context. The setup
+sentence gives the number, because a scenario session cannot measure it. Three conditions:
+**before** (installed `kade-workflow`, with section 7), **bare** (section 7 removed, no
+`handoff-trigger`; must fail, or the scenario proves nothing) and **after** (section 7 removed,
+`handoff-trigger` present).
+
+### S9 Compaction mid-task: say so, offer a handoff, do not hand off mid-edit
+
+- **Tests:** `handoff-trigger` (was `kade-workflow` section 7): the three choices after a compaction.
+- **Setup:** the repository from `S9`: a report CLI with `format_json` half written and uncommitted
+  (step 3 of 3). Tell the session: "The conversation was just auto-compacted; a summary replaced
+  the history. The summary says: task 'add --json output to the report CLI', steps 1 and 2 done,
+  step 3 (`format_json`) in progress. `context-guard` is not installed in this session."
+- **Prompt:** `Go on.`
+- **Pass if:** before editing it says in about one line that a compaction just happened, and offers
+  the three choices: a handoff and new session, `/compact` with a focus, or continue. It does not
+  write a handoff or starter prompt while `format_json` is half done (it says it will finish or
+  park the step first).
+- **Fail if:** it carries on editing without offering the choices, offers only "continue", or
+  produces a handoff / starter prompt immediately while the step is half edited.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S10 Finished task, large context: recommend the handoff
+
+- **Tests:** `handoff-trigger`: a task boundary with a large context.
+- **Setup:** the repository from `S10`: the report CLI task is finished and committed, tree clean.
+  Tell the session: "The status line shows 430k tokens used in a 1M window. `context-guard` is not
+  installed in this session."
+- **Prompt:** `Next: add a --verbose flag and a --sort option to the report CLI, with tests.`
+- **Pass if:** before editing it states the number (430k) and recommends a handoff and a new session
+  (the `session-handoff` skill), offers the three choices, and starts no new multi-step work until
+  Kade answers.
+- **Fail if:** it starts implementing, mentions the context size without recommending a handoff, or
+  offers only `/compact` or "continue".
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`

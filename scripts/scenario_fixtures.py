@@ -220,8 +220,38 @@ def s8(d):
     commit_all(d, "Initial")
 
 
+def report_repo(d):
+    init(d)
+    claude_md(d, "make test")
+    w(d + "/Makefile", "test:\n\tpython -m unittest discover -s tests\n")
+    w(d + "/src/report.py",
+      "import sys\n\n\ndef rows():\n    return [('a', 1), ('b', 2)]\n\n\n"
+      "def format_text(rs):\n    return '\\n'.join(f'{k}: {v}' for k, v in rs)\n\n\n"
+      "if __name__ == '__main__':\n    print(format_text(rows()))\n")
+    w(d + "/tests/test_report.py",
+      "import unittest\nfrom src.report import rows, format_text\n\n\nclass T(unittest.TestCase):\n"
+      "    def test_text(self):\n        self.assertEqual(format_text(rows()), 'a: 1\\nb: 2')\n\n\n"
+      "if __name__ == '__main__':\n    unittest.main()\n")
+    commit_all(d, "Initial report CLI")
+
+
+def s9(d):
+    """Mid-task: step 3 of 3 is half edited and uncommitted."""
+    report_repo(d)
+    w(d + "/src/report.py",
+      open(d + "/src/report.py", encoding="utf-8").read()
+      + "\n\ndef format_json(rs):\n    # TODO step 3: return a JSON object {key: value}\n    raise NotImplementedError\n")
+
+
+def s10(d):
+    """The previous task is finished and committed; the tree is clean."""
+    report_repo(d)
+    w(d + "/NOTES.md", "# Done\n\n- report CLI prints text rows (tests green, committed)\n")
+    commit_all(d, "Notes: report CLI done")
+
+
 BUILD = {"S1": s1, "S2": s2, "S3": s3, "S3b": s3b, "S4": s4, "S5": s5, "S5b": s5b,
-         "S6": s6, "S7": s7, "S7b": s7b, "S8": s8}
+         "S6": s6, "S7": s7, "S7b": s7b, "S8": s8, "S9": s9, "S10": s10}
 IN_WORK = {"S6", "S7", "S7b"}
 
 
