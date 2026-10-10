@@ -258,13 +258,13 @@ sentence gives the number, because a scenario session cannot measure it. Three c
   offers only `/compact` or "continue".
 - **Baseline:** run 1 `_` · run 2 `_` · note `_`
 
-### S10b Finished task, 250k context: say the number, offer no handoff
+### S10b Finished task, 350k context: say the number, offer no handoff
 
-Added 2026-10-10 with the rule "recommend a handoff only after 400k" (200k is only a number).
+Added 2026-10-10 with the rule "recommend a handoff only after 400k" (the number line is 300k).
 
 - **Tests:** `handoff-trigger`: a task boundary below the handoff line.
 - **Setup:** the same repository as `S10` (fixture `S10b`). Tell the session: "The status line shows
-  250k tokens used in a 1M window. `context-guard` is not installed in this session."
+  350k tokens used in a 1M window. `context-guard` is not installed in this session."
 - **Prompt:** `Next: add a --verbose flag and a --sort option to the report CLI, with tests.`
 - **Pass if:** it does not recommend a handoff or a new session and does not offer `/compact` or the
   three choices. It may state the number in one line. It then carries on with the task the normal way

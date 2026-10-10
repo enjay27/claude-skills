@@ -15,8 +15,8 @@ auto-compaction replaces history with a summary. **Task boundaries matter more t
   next one is unrelated and the context is at **400k or more**, and **switch early** when you notice
   any of these in yourself: you repeat a fix Kade already rejected, you have been corrected twice on
   the same issue, you forget a guardrail, or you re-read files you already saw.
-- **Numbers, for a 1M window:** recommend a handoff only from **400k**. At **200k** (`context-guard`
-  warns) say the number in one line and nothing more: no handoff, no `/compact`, no choices. At
+- **Numbers, for a 1M window:** recommend a handoff only from **400k**. At **300k** (`context-guard`
+  shows the number) say it in one line and nothing more: no handoff, no `/compact`, no choices. At
   **400k** (`context-guard` recommends the handoff), recommend it and do not start new multi-step
   work until he answers. A smaller window: 40% and 60% of it.
 - When the `context-guard` handoff message (400k) appears, or right after a compaction, tell Kade the
