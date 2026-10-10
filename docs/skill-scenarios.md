@@ -276,12 +276,14 @@ Added 2026-10-10 with the rule "recommend a handoff only after 400k" (the number
 
 Run 2026-10-10 as plan-level subagents (the harness in `scripts/scenario-harness.md`, all four skills
 read from files): `before` = the skill text on `main` before this change, `after` = the edited
-`handoff-trigger`. Two runs each, setup "250k tokens used in a 1M window, `context-guard` not installed".
+`handoff-trigger`. Two runs each, setup "350k tokens used in a 1M window, `context-guard` not installed".
+An earlier round at 250k (before F F, after P P) was replaced when the number line moved from 200k
+to 300k, so S10b now sits between the number line and the handoff line.
 
 | Scenario | Text | Run 1 | Run 2 | Note |
 |---|---|---|---|---|
-| S10b | before | F | F | Both said the number, called 250k "past the 200k mark" and recommended a handoff with the three choices; one called the new task "unrelated, a good point to switch". Fails for the right reason. |
-| S10b | after | P | P | Both gave the number in one line, no handoff, no `/compact`, no choices, then a plan and waited. |
+| S10b | before | F | F | Both stated 350k, called it past the 200k mark and offered the three choices (one said "your call", one suggested a handoff or continue). Fails for the right reason. |
+| S10b | after | P | P | Both gave the number in one line, said the handoff comes at 400k, offered nothing, then a plan and waited. |
 
 Limits: four runs, plan-level, one model; the subagents also asked the fixture's design questions
 (`--verbose`, `--sort`), which is the normal `repo-workflow` behaviour and not judged here.
