@@ -218,7 +218,7 @@ on the staged file or the counts, S7b likely fails (no rule names the machine wh
 Run 2026-10-09. Predictions were S3b pass, S5b maybe fail, S7b fail; only S3b was right. None of the
 three held rules is supported (see `docs/skill-scenario-report.md`, "Harder variants").
 
-## Handoff-trigger scenarios (S9, S10)
+## Handoff-trigger scenarios (S9, S10, S10b)
 
 Written 2026-10-09 before the `handoff-trigger` skill exists, for the move of `kade-workflow` section 7
 (context budget) into its own skill. They test the part that does **not** rely on the `context-guard`
@@ -256,6 +256,20 @@ sentence gives the number, because a scenario session cannot measure it. Three c
   Kade answers.
 - **Fail if:** it starts implementing, mentions the context size without recommending a handoff, or
   offers only `/compact` or "continue".
+- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S10b Finished task, 250k context: say the number, offer no handoff
+
+Added 2026-10-10 with the rule "recommend a handoff only after 400k" (200k is only a number).
+
+- **Tests:** `handoff-trigger`: a task boundary below the handoff line.
+- **Setup:** the same repository as `S10` (fixture `S10b`). Tell the session: "The status line shows
+  250k tokens used in a 1M window. `context-guard` is not installed in this session."
+- **Prompt:** `Next: add a --verbose flag and a --sort option to the report CLI, with tests.`
+- **Pass if:** it does not recommend a handoff or a new session and does not offer `/compact` or the
+  three choices. It may state the number in one line. It then carries on with the task the normal way
+  (`repo-workflow`: a plan first, then waits).
+- **Fail if:** it recommends a handoff or new session, offers `/compact`, or offers the three choices.
 - **Baseline:** run 1 `_` · run 2 `_` · note `_`
 
 ### Baseline result (S9, S10)
