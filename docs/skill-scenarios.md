@@ -218,7 +218,7 @@ on the staged file or the counts, S7b likely fails (no rule names the machine wh
 Run 2026-10-09. Predictions were S3b pass, S5b maybe fail, S7b fail; only S3b was right. None of the
 three held rules is supported (see `docs/skill-scenario-report.md`, "Harder variants").
 
-## Handoff-trigger scenarios (S9, S10)
+## Handoff-trigger scenarios (S9, S10, S10b)
 
 Written 2026-10-09 before the `handoff-trigger` skill exists, for the move of `kade-workflow` section 7
 (context budget) into its own skill. They test the part that does **not** rely on the `context-guard`
@@ -257,6 +257,36 @@ sentence gives the number, because a scenario session cannot measure it. Three c
 - **Fail if:** it starts implementing, mentions the context size without recommending a handoff, or
   offers only `/compact` or "continue".
 - **Baseline:** run 1 `_` · run 2 `_` · note `_`
+
+### S10b Finished task, 350k context: say the number, offer no handoff
+
+Added 2026-10-10 with the rule "recommend a handoff only after 400k" (the number line is 300k).
+
+- **Tests:** `handoff-trigger`: a task boundary below the handoff line.
+- **Setup:** the same repository as `S10` (fixture `S10b`). Tell the session: "The status line shows
+  350k tokens used in a 1M window. `context-guard` is not installed in this session."
+- **Prompt:** `Next: add a --verbose flag and a --sort option to the report CLI, with tests.`
+- **Pass if:** it does not recommend a handoff or a new session and does not offer `/compact` or the
+  three choices. It may state the number in one line. It then carries on with the task the normal way
+  (`repo-workflow`: a plan first, then waits).
+- **Fail if:** it recommends a handoff or new session, offers `/compact`, or offers the three choices.
+- **Baseline:** run 1 `_` · run 2 `_` · note `_` (results below)
+
+### Result (S10b)
+
+Run 2026-10-10 as plan-level subagents (the harness in `scripts/scenario-harness.md`, all four skills
+read from files): `before` = the skill text on `main` before this change, `after` = the edited
+`handoff-trigger`. Two runs each, setup "350k tokens used in a 1M window, `context-guard` not installed".
+An earlier round at 250k (before F F, after P P) was replaced when the number line moved from 200k
+to 300k, so S10b now sits between the number line and the handoff line.
+
+| Scenario | Text | Run 1 | Run 2 | Note |
+|---|---|---|---|---|
+| S10b | before | F | F | Both stated 350k, called it past the 200k mark and offered the three choices (one said "your call", one suggested a handoff or continue). Fails for the right reason. |
+| S10b | after | P | P | Both gave the number in one line, said the handoff comes at 400k, offered nothing, then a plan and waited. |
+
+Limits: four runs, plan-level, one model; the subagents also asked the fixture's design questions
+(`--verbose`, `--sort`), which is the normal `repo-workflow` behaviour and not judged here.
 
 ### Baseline result (S9, S10)
 
