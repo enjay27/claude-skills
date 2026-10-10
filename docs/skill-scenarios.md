@@ -270,7 +270,21 @@ Added 2026-10-10 with the rule "recommend a handoff only after 400k" (200k is on
   three choices. It may state the number in one line. It then carries on with the task the normal way
   (`repo-workflow`: a plan first, then waits).
 - **Fail if:** it recommends a handoff or new session, offers `/compact`, or offers the three choices.
-- **Baseline:** run 1 `_` · run 2 `_` · note `_`
+- **Baseline:** run 1 `_` · run 2 `_` · note `_` (results below)
+
+### Result (S10b)
+
+Run 2026-10-10 as plan-level subagents (the harness in `scripts/scenario-harness.md`, all four skills
+read from files): `before` = the skill text on `main` before this change, `after` = the edited
+`handoff-trigger`. Two runs each, setup "250k tokens used in a 1M window, `context-guard` not installed".
+
+| Scenario | Text | Run 1 | Run 2 | Note |
+|---|---|---|---|---|
+| S10b | before | F | F | Both said the number, called 250k "past the 200k mark" and recommended a handoff with the three choices; one called the new task "unrelated, a good point to switch". Fails for the right reason. |
+| S10b | after | P | P | Both gave the number in one line, no handoff, no `/compact`, no choices, then a plan and waited. |
+
+Limits: four runs, plan-level, one model; the subagents also asked the fixture's design questions
+(`--verbose`, `--sort`), which is the normal `repo-workflow` behaviour and not judged here.
 
 ### Baseline result (S9, S10)
 
